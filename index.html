@@ -125,17 +125,15 @@
             return new Date(dateString + 'T00:00:00').toLocaleDateString('id-ID', options);
         }
 
-        // Fungsi Menambah 1 Bulan Otomatis
+        // Hitung tanggal 1 bulan ke depan secara presisi
         function getNextMonthDate(dateString) {
             const date = new Date(dateString + 'T00:00:00');
             const currentDay = date.getDate();
             
-            // Tambah 1 bulan
             date.setMonth(date.getMonth() + 1);
 
-            // Penanganan jika bulan depan memiliki jumlah hari lebih sedikit (misal: 31 Jan -> Feb)
             if (date.getDate() !== currentDay) {
-                date.setDate(0); // Set ke hari terakhir bulan sebelumnya
+                date.setDate(0); 
             }
 
             const year = date.getFullYear();
@@ -145,28 +143,23 @@
             return `${year}-${month}-${day}`;
         }
 
-        // Konfirmasi Pembayaran dan Buat Tagihan Bulan Depan
+        // Proses Bayar: Perbarui data yang ada tanpa menambah baris baru
         function markAsPaid(id) {
             const bill = bills.find(b => b.id === id);
-            if (confirm(`Apakah Anda yakin bahwa tagihan atas nama ${bill.namaPemilik} (${bill.noRumah}) sudah LUNAS?\n\nCatatan: Tagihan baru untuk bulan depan akan otomatis dibuat.`)) {
-                // 1. Ubah status tagihan saat ini menjadi Lunas
-                bills = bills.map(b => b.id === id ? {...b, status: 'Lunas'} : b);
+            const nextDate = getNextMonthDate(bill.jatuhTempo);
 
-                // 2. Hitung tanggal jatuh tempo 1 bulan ke depan
-                const nextJatuhTempo = getNextMonthDate(bill.jatuhTempo);
-
-                // 3. Tambahkan tagihan baru untuk bulan berikutnya
-                const newBill = {
-                    id: Date.now(),
-                    namaPemilik: bill.namaPemilik,
-                    noRumah: bill.noRumah,
-                    noWhatsapp: bill.noWhatsapp,
-                    jumlahIuran: bill.jumlahIuran,
-                    jatuhTempo: nextJatuhTempo,
-                    status: 'Belum Bayar'
-                };
-
-                bills.push(newBill);
+            if (confirm(`Konfirmasi Pembayaran:\nAtas Nama: ${bill.namaPemilik} (${bill.noRumah})\n\nSetelah dikonfirmasi, tanggal jatuh tempo akan otomatis diperbarui ke bulan berikutnya (${formatDate(nextDate)}).`)) {
+                
+                bills = bills.map(b => {
+                    if (b.id === id) {
+                        return {
+                            ...b,
+                            jatuhTempo: nextDate,
+                            status: 'Belum Bayar' // Siap untuk periode tagihan berikutnya
+                        };
+                    }
+                    return b;
+                });
 
                 saveData();
                 renderTable();
@@ -174,7 +167,7 @@
         }
 
         function deleteBill(id) {
-            if (confirm('Yakin ingin menghapus data ini?')) {
+            if (confirm('Yakin ingin menghapus data warga ini?')) {
                 bills = bills.filter(b => b.id !== id);
                 saveData();
                 renderTable();
@@ -195,7 +188,7 @@
                 } catch (err) { console.log('Share dibatalkan'); }
             } else {
                 navigator.clipboard.writeText(msg);
-                alert("Browser tidak mendukung fitur share otomatis. Pesan pengingat telah disalin ke clipboard!");
+                alert("Pesan pengingat telah disalin ke clipboard!");
             }
         }
 
@@ -205,12 +198,8 @@
             const tbody = document.getElementById('billTableBody');
             const namaPerumahan = localStorage.getItem('perumahan_nama') || '-';
             tbody.innerHTML = bills.length === 0 ? `<tr><td colspan="8" style="text-align:center; color:#888;">Belum ada data tagihan.</td></tr>` : '';
-            
-            // Urutkan data berdasarkan ID terbaru di atas
-            const sortedBills = [...bills].reverse();
 
-            sortedBills.forEach(bill => {
-                const isPaid = bill.status === 'Lunas';
+            bills.forEach(bill => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><strong>${bill.namaPemilik}</strong></td>
@@ -219,10 +208,10 @@
                     <td>${bill.noWhatsapp}</td>
                     <td>${formatRupiah(bill.jumlahIuran)}</td>
                     <td>${formatDate(bill.jatuhTempo)}</td>
-                    <td><span class="badge ${isPaid ? 'badge-paid' : 'badge-pending'}">${bill.status}</span></td>
+                    <td><span class="badge badge-pending">${bill.status}</span></td>
                     <td>
-                        ${!isPaid ? `<button class="btn-action btn-pay" onclick="markAsPaid(${bill.id})">Bayar</button>` : ''}
-                        ${!isPaid ? `<button class="btn-action btn-share" onclick="shareReminder(${bill.id})">Share</button>` : ''}
+                        <button class="btn-action btn-pay" onclick="markAsPaid(${bill.id})">Bayar</button>
+                        <button class="btn-action btn-share" onclick="shareReminder(${bill.id})">Share</button>
                         <button class="btn-action btn-delete" onclick="deleteBill(${bill.id})">Hapus</button>
                     </td>
                 `;
