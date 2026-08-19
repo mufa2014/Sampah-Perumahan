@@ -27,9 +27,13 @@
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
         .form-group { display: flex; flex-direction: column; }
         .form-group label { font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; }
-        .form-group input { padding: 10px; border: 1px solid var(--border); border-radius: 4px; }
+        .form-group input, .form-group select { padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.9rem; }
         .btn { background-color: var(--primary); color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 15px; font-weight: bold; }
         .btn:hover { background-color: var(--primary-hover); }
+        
+        .card-header-flex { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+        .filter-container { display: flex; align-items: center; gap: 10px; }
+
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
         th { background-color: #f8f9fa; color: #555; }
@@ -65,7 +69,13 @@
         </div>
 
         <div class="card">
-            <h3>Daftar Riwayat & Tagihan Iuran</h3>
+            <div class="card-header-flex">
+                <h3>Daftar Tagihan Iuran</h3>
+                <div class="filter-container">
+                    <label for="filterBulan" style="font-size:0.85rem; font-weight:bold;">Filter Periode:</label>
+                    <input type="month" id="filterBulan" onchange="renderTable()" style="padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px;">
+                </div>
+            </div>
             <div style="overflow-x: auto;">
                 <table>
                     <thead>
@@ -91,6 +101,13 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             document.getElementById('namaPerumahan').value = localStorage.getItem('perumahan_nama') || '';
+            
+            // Set default filter ke Bulan & Tahun saat ini (YYYY-MM)
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            document.getElementById('filterBulan').value = `${year}-${month}`;
+
             renderTable();
         });
 
@@ -101,15 +118,20 @@
 
         document.getElementById('billForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            const inputTempo = document.getElementById('jatuhTempo').value;
             bills.push({
                 id: Date.now(),
                 namaPemilik: document.getElementById('namaPemilik').value,
                 noRumah: document.getElementById('noRumah').value,
                 noWhatsapp: document.getElementById('noWhatsapp').value,
                 jumlahIuran: parseInt(document.getElementById('jumlahIuran').value),
-                jatuhTempo: document.getElementById('jatuhTempo').value,
+                jatuhTempo: inputTempo,
                 status: 'Belum Bayar'
             });
+
+            // Sesuaikan filter bulan ke bulan jatuh tempo data baru agar langsung kelihatan
+            document.getElementById('filterBulan').value = inputTempo.slice(0, 7);
+
             saveData();
             renderTable();
             this.reset();
@@ -146,12 +168,12 @@
             const bill = bills.find(b => b.id === id);
             const nextDate = getNextMonthDate(bill.jatuhTempo);
 
-            if (confirm(`Konfirmasi Pembayaran:\nAtas Nama: ${bill.namaPemilik} (${bill.noRumah})\n\nTagihan ini akan diubah menjadi LUNAS sebagai riwayat, dan tagihan baru untuk bulan berikutnya (${formatDate(nextDate)}) akan otomatis dibuat.`)) {
+            if (confirm(`Konfirmasi Pembayaran:\nAtas Nama: ${bill.namaPemilik} (${bill.noRumah})\n\nTagihan bulan ini akan disimpan sebagai LUNAS, dan tagihan baru periode (${formatDate(nextDate)}) otomatis dibuat.`)) {
                 
-                // 1. Ubah status bulan ini menjadi Lunas (menjadi riwayat)
+                // 1. Tagihan ini jadi LUNAS (tersimpan sebagai riwayat bulan ini)
                 bills = bills.map(b => b.id === id ? {...b, status: 'Lunas'} : b);
 
-                // 2. Buat baris tagihan baru untuk bulan depan
+                // 2. Buat tagihan baru untuk bulan berikutnya
                 const newBill = {
                     id: Date.now(),
                     namaPemilik: bill.namaPemilik,
@@ -170,7 +192,7 @@
         }
 
         function deleteBill(id) {
-            if (confirm('Yakin ingin menghapus data riwayat/tagihan ini?')) {
+            if (confirm('Yakin ingin menghapus data ini?')) {
                 bills = bills.filter(b => b.id !== id);
                 saveData();
                 renderTable();
@@ -200,10 +222,20 @@
         function renderTable() {
             const tbody = document.getElementById('billTableBody');
             const namaPerumahan = localStorage.getItem('perumahan_nama') || '-';
-            tbody.innerHTML = bills.length === 0 ? `<tr><td colspan="8" style="text-align:center; color:#888;">Belum ada data tagihan.</td></tr>` : '';
+            const selectedMonth = document.getElementById('filterBulan').value; // Format: YYYY-MM
 
-            // Urutkan dari yang terbaru di atas
-            const sortedBills = [...bills].reverse();
+            tbody.innerHTML = '';
+
+            // Filter data berdasarkan bulan & tahun jatuh tempo
+            const filteredBills = bills.filter(bill => bill.jatuhTempo.startsWith(selectedMonth));
+
+            if (filteredBills.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#888;">Tidak ada data tagihan untuk periode ini.</td></tr>`;
+                return;
+            }
+
+            // Urutkan data berdasarkan ID terbaru
+            const sortedBills = [...filteredBills].reverse();
 
             sortedBills.forEach(bill => {
                 const isPaid = bill.status === 'Lunas';
