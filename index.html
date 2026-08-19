@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Tagihan Sampah</title>
+    <title>Aplikasi Tagihan Sampah Multi-Perumahan</title>
     <style>
         :root {
             --primary: #2e7d32;
@@ -19,20 +19,21 @@
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background-color: var(--bg); color: var(--text); padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; }
+        .container { max-width: 1050px; margin: 0 auto; }
         header { text-align: center; margin-bottom: 25px; background: var(--primary); color: white; padding: 20px; border-radius: 8px; }
-        header input { background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.5); color: white; text-align: center; padding: 5px; border-radius: 4px; width: 80%; max-width: 400px; }
-        header input::placeholder { color: rgba(255, 255, 255, 0.8); }
+        
         .card { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 25px; }
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
         .form-group { display: flex; flex-direction: column; }
         .form-group label { font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; }
         .form-group input, .form-group select { padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.9rem; }
         .btn { background-color: var(--primary); color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 15px; font-weight: bold; }
         .btn:hover { background-color: var(--primary-hover); }
         
-        .card-header-flex { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
-        .filter-container { display: flex; align-items: center; gap: 10px; }
+        .card-header-flex { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; }
+        .filters-group { display: flex; flex-wrap: wrap; align-items: center; gap: 15px; }
+        .filter-item { display: flex; align-items: center; gap: 8px; }
+        .filter-item label { font-size: 0.85rem; font-weight: bold; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
@@ -51,18 +52,37 @@
     <div class="container">
         <header>
             <h1>Sistem Tagihan Sampah</h1>
-            <input type="text" id="namaPerumahan" placeholder="Nama Perumahan" oninput="savePerumahanName()">
+            <p style="font-size: 0.9rem; margin-top: 5px; opacity: 0.9;">Kelola Iuran Berbagai Perumahan</p>
         </header>
 
         <div class="card">
             <h3>Tambah Data Warga</h3>
             <form id="billForm" style="margin-top: 15px;">
                 <div class="form-grid">
-                    <div class="form-group"><label>Nama Pemilik</label><input type="text" id="namaPemilik" required placeholder="Contoh: Budi Santoso"></div>
-                    <div class="form-group"><label>No. Rumah</label><input type="text" id="noRumah" required placeholder="Contoh: A-12"></div>
-                    <div class="form-group"><label>No. WhatsApp</label><input type="tel" id="noWhatsapp" required placeholder="Contoh: 081234567890"></div>
-                    <div class="form-group"><label>Jumlah Iuran (Rp)</label><input type="number" id="jumlahIuran" required placeholder="Contoh: 50000"></div>
-                    <div class="form-group"><label>Tanggal Jatuh Tempo</label><input type="date" id="jatuhTempo" required></div>
+                    <div class="form-group">
+                        <label>Nama Perumahan</label>
+                        <input type="text" id="namaPerumahan" required placeholder="Contoh: Paradise Residence 4">
+                    </div>
+                    <div class="form-group">
+                        <label>Nama Pemilik</label>
+                        <input type="text" id="namaPemilik" required placeholder="Contoh: Budi Santoso">
+                    </div>
+                    <div class="form-group">
+                        <label>No. Rumah</label>
+                        <input type="text" id="noRumah" required placeholder="Contoh: A-12">
+                    </div>
+                    <div class="form-group">
+                        <label>No. WhatsApp</label>
+                        <input type="tel" id="noWhatsapp" required placeholder="Contoh: 081234567890">
+                    </div>
+                    <div class="form-group">
+                        <label>Jumlah Iuran (Rp)</label>
+                        <input type="number" id="jumlahIuran" required placeholder="Contoh: 50000">
+                    </div>
+                    <div class="form-group">
+                        <label>Tanggal Jatuh Tempo</label>
+                        <input type="date" id="jatuhTempo" required>
+                    </div>
                 </div>
                 <button type="submit" class="btn">Simpan Data Tagihan</button>
             </form>
@@ -71,9 +91,17 @@
         <div class="card">
             <div class="card-header-flex">
                 <h3>Daftar Tagihan Iuran</h3>
-                <div class="filter-container">
-                    <label for="filterBulan" style="font-size:0.85rem; font-weight:bold;">Filter Periode:</label>
-                    <input type="month" id="filterBulan" onchange="renderTable()" style="padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px;">
+                <div class="filters-group">
+                    <div class="filter-item">
+                        <label for="filterPerumahan">Perumahan:</label>
+                        <select id="filterPerumahan" onchange="renderTable()" style="padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px;">
+                            <option value="Semua">Semua Perumahan</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label for="filterBulan">Periode:</label>
+                        <input type="month" id="filterBulan" onchange="renderTable()" style="padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px;">
+                    </div>
                 </div>
             </div>
             <div style="overflow-x: auto;">
@@ -100,27 +128,23 @@
         let bills = JSON.parse(localStorage.getItem('perumahan_bills')) || [];
 
         document.addEventListener("DOMContentLoaded", () => {
-            document.getElementById('namaPerumahan').value = localStorage.getItem('perumahan_nama') || '';
-            
-            // Set default filter ke Bulan & Tahun saat ini (YYYY-MM)
             const now = new Date();
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0');
             document.getElementById('filterBulan').value = `${year}-${month}`;
 
+            updatePerumahanDropdown();
             renderTable();
         });
-
-        function savePerumahanName() { 
-            localStorage.setItem('perumahan_nama', document.getElementById('namaPerumahan').value); 
-            renderTable();
-        }
 
         document.getElementById('billForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const inputTempo = document.getElementById('jatuhTempo').value;
+            const inputPerumahan = document.getElementById('namaPerumahan').value.trim();
+
             bills.push({
                 id: Date.now(),
+                namaPerumahan: inputPerumahan,
                 namaPemilik: document.getElementById('namaPemilik').value,
                 noRumah: document.getElementById('noRumah').value,
                 noWhatsapp: document.getElementById('noWhatsapp').value,
@@ -129,10 +153,14 @@
                 status: 'Belum Bayar'
             });
 
-            // Sesuaikan filter bulan ke bulan jatuh tempo data baru agar langsung kelihatan
             document.getElementById('filterBulan').value = inputTempo.slice(0, 7);
 
             saveData();
+            updatePerumahanDropdown();
+            
+            // Set filter otomatis ke perumahan yang baru diinput
+            document.getElementById('filterPerumahan').value = inputPerumahan;
+            
             renderTable();
             this.reset();
         });
@@ -168,14 +196,13 @@
             const bill = bills.find(b => b.id === id);
             const nextDate = getNextMonthDate(bill.jatuhTempo);
 
-            if (confirm(`Konfirmasi Pembayaran:\nAtas Nama: ${bill.namaPemilik} (${bill.noRumah})\n\nTagihan bulan ini akan disimpan sebagai LUNAS, dan tagihan baru periode (${formatDate(nextDate)}) otomatis dibuat.`)) {
+            if (confirm(`Konfirmasi Pembayaran:\nAtas Nama: ${bill.namaPemilik} (${bill.namaPerumahan} - ${bill.noRumah})\n\nTagihan bulan ini akan disimpan sebagai LUNAS, dan tagihan baru periode (${formatDate(nextDate)}) otomatis dibuat.`)) {
                 
-                // 1. Tagihan ini jadi LUNAS (tersimpan sebagai riwayat bulan ini)
                 bills = bills.map(b => b.id === id ? {...b, status: 'Lunas'} : b);
 
-                // 2. Buat tagihan baru untuk bulan berikutnya
                 const newBill = {
                     id: Date.now(),
+                    namaPerumahan: bill.namaPerumahan,
                     namaPemilik: bill.namaPemilik,
                     noRumah: bill.noRumah,
                     noWhatsapp: bill.noWhatsapp,
@@ -195,15 +222,15 @@
             if (confirm('Yakin ingin menghapus data ini?')) {
                 bills = bills.filter(b => b.id !== id);
                 saveData();
+                updatePerumahanDropdown();
                 renderTable();
             }
         }
 
         async function shareReminder(id) {
             const bill = bills.find(b => b.id === id);
-            const namaPerumahan = localStorage.getItem('perumahan_nama') || 'Perumahan';
             const msg = `Halo Bapak/Ibu *${bill.namaPemilik}* (${bill.noRumah}),\n\n` +
-                        `Mengingatkan untuk pembayaran *Iuran Sampah ${namaPerumahan}* sebesar *${formatRupiah(bill.jumlahIuran)}*.\n` +
+                        `Mengingatkan untuk pembayaran *Iuran Sampah ${bill.namaPerumahan}* sebesar *${formatRupiah(bill.jumlahIuran)}*.\n` +
                         `Tanggal Jatuh Tempo: *${formatDate(bill.jatuhTempo)}*.\n\n` +
                         `Mohon segera melakukan pembayaran. Terima kasih!`;
 
@@ -217,24 +244,49 @@
             }
         }
 
+        // Memperbarui daftar opsi pada dropdown Filter Perumahan secara otomatis
+        function updatePerumahanDropdown() {
+            const select = document.getElementById('filterPerumahan');
+            const currentValue = select.value;
+            
+            // Ambil daftar nama perumahan unik
+            const perumahanList = [...new Set(bills.map(b => b.namaPerumahan))];
+
+            select.innerHTML = '<option value="Semua">Semua Perumahan</option>';
+            perumahanList.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p;
+                opt.textContent = p;
+                select.appendChild(opt);
+            });
+
+            // Pertahankan pilihan sebelumnya jika masih ada dalam daftar
+            if (perumahanList.includes(currentValue)) {
+                select.value = currentValue;
+            }
+        }
+
         function saveData() { localStorage.setItem('perumahan_bills', JSON.stringify(bills)); }
 
         function renderTable() {
             const tbody = document.getElementById('billTableBody');
-            const namaPerumahan = localStorage.getItem('perumahan_nama') || '-';
-            const selectedMonth = document.getElementById('filterBulan').value; // Format: YYYY-MM
+            const selectedMonth = document.getElementById('filterBulan').value; 
+            const selectedPerumahan = document.getElementById('filterPerumahan').value;
 
             tbody.innerHTML = '';
 
-            // Filter data berdasarkan bulan & tahun jatuh tempo
-            const filteredBills = bills.filter(bill => bill.jatuhTempo.startsWith(selectedMonth));
+            // Filter data berdasarkan Bulan dan Nama Perumahan
+            const filteredBills = bills.filter(bill => {
+                const matchMonth = bill.jatuhTempo.startsWith(selectedMonth);
+                const matchPerumahan = selectedPerumahan === 'Semua' || bill.namaPerumahan === selectedPerumahan;
+                return matchMonth && matchPerumahan;
+            });
 
             if (filteredBills.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#888;">Tidak ada data tagihan untuk periode ini.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#888;">Tidak ada data tagihan untuk kriteria ini.</td></tr>`;
                 return;
             }
 
-            // Urutkan data berdasarkan ID terbaru
             const sortedBills = [...filteredBills].reverse();
 
             sortedBills.forEach(bill => {
@@ -242,7 +294,7 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><strong>${bill.namaPemilik}</strong></td>
-                    <td>${namaPerumahan}</td>
+                    <td>${bill.namaPerumahan}</td>
                     <td>${bill.noRumah}</td>
                     <td>${bill.noWhatsapp}</td>
                     <td>${formatRupiah(bill.jumlahIuran)}</td>
