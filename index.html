@@ -179,10 +179,14 @@
             const currentFilterVal = selectFilter.value;
             const currentFormVal = selectForm.value;
 
+            // Urutkan nama perumahan sesuai abjad dan nomor secara alami (Natural Sort)
+            masterPerumahan.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
             selectForm.innerHTML = '<option value="">-- Pilih Perumahan --</option>';
             selectFilter.innerHTML = '<option value="Semua">Semua Perumahan</option>';
 
             masterPerumahan.forEach(p => {
+                if (!p) return;
                 const opt1 = document.createElement('option');
                 opt1.value = p;
                 opt1.textContent = p;
@@ -205,7 +209,6 @@
             const inputPerumahan = document.getElementById('namaPerumahan').value;
 
             if (editId) {
-                // Modus Edit Data
                 bills = bills.map(b => {
                     if (b.id == editId) {
                         return {
@@ -221,7 +224,6 @@
                     return b;
                 });
             } else {
-                // Modus Tambah Data Baru
                 bills.push({
                     id: Date.now(),
                     namaPerumahan: inputPerumahan,
@@ -340,7 +342,7 @@
             if (navigator.share) {
                 try {
                     await navigator.share({ title: 'Tagihan Iuran Sampah', text: msg });
-                } catch (err) { console.log('Share dibatalkan'); }
+                } catch (err) { console.log('Pengingat dibatalkan'); }
             } else {
                 navigator.clipboard.writeText(msg);
                 alert("Pesan pengingat telah disalin ke clipboard!");
@@ -383,7 +385,7 @@
                     <td><span class="badge ${isPaid ? 'badge-paid' : 'badge-pending'}">${bill.status}</span></td>
                     <td>
                         ${!isPaid ? `<button class="btn-action btn-pay" onclick="markAsPaid(${bill.id})">Bayar</button>` : ''}
-                        ${!isPaid ? `<button class="btn-action btn-share" onclick="shareReminder(${bill.id})">Share</button>` : ''}
+                        ${!isPaid ? `<button class="btn-action btn-share" onclick="shareReminder(${bill.id})">Ingatkan</button>` : ''}
                         <button class="btn-action btn-delete" onclick="deleteBill(${bill.id})">Hapus</button>
                         <button class="btn-action btn-edit" onclick="editBill(${bill.id})">Edit</button>
                     </td>
