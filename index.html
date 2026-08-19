@@ -15,11 +15,12 @@
             --danger: #d32f2f;
             --success: #388e3c;
             --share-color: #007bff;
+            --warning: #f57c00;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background-color: var(--bg); color: var(--text); padding: 20px; }
-        .container { max-width: 1050px; margin: 0 auto; }
+        .container { max-width: 1100px; margin: 0 auto; }
         header { text-align: center; margin-bottom: 25px; background: var(--primary); color: white; padding: 20px; border-radius: 8px; }
         
         .card { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 25px; }
@@ -41,10 +42,12 @@
         .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
         .badge-pending { background-color: #ffebee; color: var(--danger); }
         .badge-paid { background-color: #e8f5e9; color: var(--success); }
-        .btn-action { border: none; cursor: pointer; padding: 6px 12px; border-radius: 4px; font-size: 0.8rem; margin: 2px; }
+        .btn-action { border: none; cursor: pointer; padding: 6px 10px; border-radius: 4px; font-size: 0.8rem; margin: 2px; }
         .btn-pay { background-color: #e3f2fd; color: #1976d2; }
         .btn-share { background-color: var(--share-color); color: white; }
+        .btn-edit { background-color: #fff3e0; color: var(--warning); }
         .btn-delete { background-color: #ffebee; color: var(--danger); }
+        .btn-secondary { background-color: #f5f5f5; border: 1px solid var(--border); color: #333; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
     </style>
 </head>
 <body>
@@ -56,12 +59,19 @@
         </header>
 
         <div class="card">
-            <h3>Tambah Data Warga</h3>
-            <form id="billForm" style="margin-top: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 id="formTitle">Tambah Data Warga</h3>
+                <button type="button" class="btn-secondary" onclick="tambahNamaPerumahan()">+ Kelola Master Perumahan</button>
+            </div>
+            
+            <form id="billForm">
+                <input type="hidden" id="editId" value="">
                 <div class="form-grid">
                     <div class="form-group">
                         <label>Nama Perumahan</label>
-                        <input type="text" id="namaPerumahan" required placeholder="Contoh: Paradise Residence 4">
+                        <select id="namaPerumahan" required>
+                            <option value="">-- Pilih Perumahan --</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>Nama Pemilik</label>
@@ -84,7 +94,10 @@
                         <input type="date" id="jatuhTempo" required>
                     </div>
                 </div>
-                <button type="submit" class="btn">Simpan Data Tagihan</button>
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn" id="btnSubmit">Simpan Data Tagihan</button>
+                    <button type="button" class="btn" id="btnCancelEdit" style="background-color: #757575; display: none;" onclick="resetForm()">Batal Edit</button>
+                </div>
             </form>
         </div>
 
@@ -126,6 +139,7 @@
 
     <script>
         let bills = JSON.parse(localStorage.getItem('perumahan_bills')) || [];
+        let masterPerumahan = JSON.parse(localStorage.getItem('master_perumahan')) || [];
 
         document.addEventListener("DOMContentLoaded", () => {
             const now = new Date();
@@ -133,37 +147,127 @@
             const month = String(now.getMonth() + 1).padStart(2, '0');
             document.getElementById('filterBulan').value = `${year}-${month}`;
 
-            updatePerumahanDropdown();
+            // Sync master perumahan dari data awal jika kosong
+            if (masterPerumahan.length === 0 && bills.length > 0) {
+                masterPerumahan = [...new Set(bills.map(b => b.namaPerumahan))];
+                saveMasterPerumahan();
+            }
+
+            renderPerumahanDropdowns();
             renderTable();
         });
+
+        function tambahNamaPerumahan() {
+            const input = prompt("Masukkan Nama Perumahan Baru:");
+            if (input && input.trim() !== "") {
+                const nama = input.trim();
+                if (!masterPerumahan.includes(nama)) {
+                    masterPerumahan.push(nama);
+                    saveMasterPerumahan();
+                    renderPerumahanDropdowns();
+                    document.getElementById('namaPerumahan').value = nama;
+                } else {
+                    alert("Nama perumahan tersebut sudah ada!");
+                }
+            }
+        }
+
+        function renderPerumahanDropdowns() {
+            const selectForm = document.getElementById('namaPerumahan');
+            const selectFilter = document.getElementById('filterPerumahan');
+            
+            const currentFilterVal = selectFilter.value;
+            const currentFormVal = selectForm.value;
+
+            selectForm.innerHTML = '<option value="">-- Pilih Perumahan --</option>';
+            selectFilter.innerHTML = '<option value="Semua">Semua Perumahan</option>';
+
+            masterPerumahan.forEach(p => {
+                const opt1 = document.createElement('option');
+                opt1.value = p;
+                opt1.textContent = p;
+                selectForm.appendChild(opt1);
+
+                const opt2 = document.createElement('option');
+                opt2.value = p;
+                opt2.textContent = p;
+                selectFilter.appendChild(opt2);
+            });
+
+            if (masterPerumahan.includes(currentFormVal)) selectForm.value = currentFormVal;
+            if (masterPerumahan.includes(currentFilterVal)) selectFilter.value = currentFilterVal;
+        }
 
         document.getElementById('billForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            const editId = document.getElementById('editId').value;
             const inputTempo = document.getElementById('jatuhTempo').value;
-            const inputPerumahan = document.getElementById('namaPerumahan').value.trim();
+            const inputPerumahan = document.getElementById('namaPerumahan').value;
 
-            bills.push({
-                id: Date.now(),
-                namaPerumahan: inputPerumahan,
-                namaPemilik: document.getElementById('namaPemilik').value,
-                noRumah: document.getElementById('noRumah').value,
-                noWhatsapp: document.getElementById('noWhatsapp').value,
-                jumlahIuran: parseInt(document.getElementById('jumlahIuran').value),
-                jatuhTempo: inputTempo,
-                status: 'Belum Bayar'
-            });
+            if (editId) {
+                // Modus Edit Data
+                bills = bills.map(b => {
+                    if (b.id == editId) {
+                        return {
+                            ...b,
+                            namaPerumahan: inputPerumahan,
+                            namaPemilik: document.getElementById('namaPemilik').value,
+                            noRumah: document.getElementById('noRumah').value,
+                            noWhatsapp: document.getElementById('noWhatsapp').value,
+                            jumlahIuran: parseInt(document.getElementById('jumlahIuran').value),
+                            jatuhTempo: inputTempo
+                        };
+                    }
+                    return b;
+                });
+            } else {
+                // Modus Tambah Data Baru
+                bills.push({
+                    id: Date.now(),
+                    namaPerumahan: inputPerumahan,
+                    namaPemilik: document.getElementById('namaPemilik').value,
+                    noRumah: document.getElementById('noRumah').value,
+                    noWhatsapp: document.getElementById('noWhatsapp').value,
+                    jumlahIuran: parseInt(document.getElementById('jumlahIuran').value),
+                    jatuhTempo: inputTempo,
+                    status: 'Belum Bayar'
+                });
+            }
 
             document.getElementById('filterBulan').value = inputTempo.slice(0, 7);
+            document.getElementById('filterPerumahan').value = inputPerumahan;
 
             saveData();
-            updatePerumahanDropdown();
-            
-            // Set filter otomatis ke perumahan yang baru diinput
-            document.getElementById('filterPerumahan').value = inputPerumahan;
-            
             renderTable();
-            this.reset();
+            resetForm();
         });
+
+        function editBill(id) {
+            const bill = bills.find(b => b.id === id);
+            if (!bill) return;
+
+            document.getElementById('editId').value = bill.id;
+            document.getElementById('namaPerumahan').value = bill.namaPerumahan;
+            document.getElementById('namaPemilik').value = bill.namaPemilik;
+            document.getElementById('noRumah').value = bill.noRumah;
+            document.getElementById('noWhatsapp').value = bill.noWhatsapp;
+            document.getElementById('jumlahIuran').value = bill.jumlahIuran;
+            document.getElementById('jatuhTempo').value = bill.jatuhTempo;
+
+            document.getElementById('formTitle').textContent = "Edit Data Warga";
+            document.getElementById('btnSubmit').textContent = "Update Data";
+            document.getElementById('btnCancelEdit').style.display = "block";
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetForm() {
+            document.getElementById('billForm').reset();
+            document.getElementById('editId').value = "";
+            document.getElementById('formTitle').textContent = "Tambah Data Warga";
+            document.getElementById('btnSubmit').textContent = "Simpan Data Tagihan";
+            document.getElementById('btnCancelEdit').style.display = "none";
+        }
 
         function formatRupiah(amount) {
             return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(amount);
@@ -222,7 +326,6 @@
             if (confirm('Yakin ingin menghapus data ini?')) {
                 bills = bills.filter(b => b.id !== id);
                 saveData();
-                updatePerumahanDropdown();
                 renderTable();
             }
         }
@@ -244,29 +347,8 @@
             }
         }
 
-        // Memperbarui daftar opsi pada dropdown Filter Perumahan secara otomatis
-        function updatePerumahanDropdown() {
-            const select = document.getElementById('filterPerumahan');
-            const currentValue = select.value;
-            
-            // Ambil daftar nama perumahan unik
-            const perumahanList = [...new Set(bills.map(b => b.namaPerumahan))];
-
-            select.innerHTML = '<option value="Semua">Semua Perumahan</option>';
-            perumahanList.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p;
-                opt.textContent = p;
-                select.appendChild(opt);
-            });
-
-            // Pertahankan pilihan sebelumnya jika masih ada dalam daftar
-            if (perumahanList.includes(currentValue)) {
-                select.value = currentValue;
-            }
-        }
-
         function saveData() { localStorage.setItem('perumahan_bills', JSON.stringify(bills)); }
+        function saveMasterPerumahan() { localStorage.setItem('master_perumahan', JSON.stringify(masterPerumahan)); }
 
         function renderTable() {
             const tbody = document.getElementById('billTableBody');
@@ -275,7 +357,6 @@
 
             tbody.innerHTML = '';
 
-            // Filter data berdasarkan Bulan dan Nama Perumahan
             const filteredBills = bills.filter(bill => {
                 const matchMonth = bill.jatuhTempo.startsWith(selectedMonth);
                 const matchPerumahan = selectedPerumahan === 'Semua' || bill.namaPerumahan === selectedPerumahan;
@@ -304,6 +385,7 @@
                         ${!isPaid ? `<button class="btn-action btn-pay" onclick="markAsPaid(${bill.id})">Bayar</button>` : ''}
                         ${!isPaid ? `<button class="btn-action btn-share" onclick="shareReminder(${bill.id})">Share</button>` : ''}
                         <button class="btn-action btn-delete" onclick="deleteBill(${bill.id})">Hapus</button>
+                        <button class="btn-action btn-edit" onclick="editBill(${bill.id})">Edit</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
