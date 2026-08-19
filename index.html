@@ -20,38 +20,144 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: var(--bg); color: var(--text); padding: 20px; }
+        body { background-color: var(--bg); color: var(--text); padding: 12px; }
         .container { max-width: 1100px; margin: 0 auto; }
-        header { text-align: center; margin-bottom: 25px; background: var(--primary); color: white; padding: 20px; border-radius: 8px; }
         
-        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 25px; }
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
-        .form-group { display: flex; flex-direction: column; }
-        .form-group label { font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; }
-        .form-group input, .form-group select { padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.9rem; }
-        .btn { background-color: var(--primary); color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 15px; font-weight: bold; }
-        .btn:hover { background-color: var(--primary-hover); }
+        header { 
+            text-align: center; 
+            margin-bottom: 15px; 
+            background: var(--primary); 
+            color: white; 
+            padding: 15px; 
+            border-radius: 8px; 
+        }
+        header h1 { font-size: 1.4rem; }
+        header p { font-size: 0.8rem; opacity: 0.9; margin-top: 4px; }
         
-        .card-header-flex { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; }
-        .filters-group { display: flex; flex-wrap: wrap; align-items: center; gap: 15px; }
-        .filter-item { display: flex; align-items: center; gap: 8px; }
-        .filter-item label { font-size: 0.85rem; font-weight: bold; }
+        .card { 
+            background: var(--card-bg); 
+            padding: 15px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+            margin-bottom: 20px; 
+        }
+        
+        .card-header-flex { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px; 
+            margin-bottom: 15px; 
+        }
+        
+        .filters-group { 
+            display: flex; 
+            flex-wrap: wrap; 
+            align-items: center; 
+            gap: 8px; 
+        }
+        .filter-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            flex: 1 1 140px; 
+        }
+        .filter-item label { font-size: 0.8rem; font-weight: bold; white-space: nowrap; }
+        .filter-item select, .filter-item input { 
+            width: 100%; 
+            padding: 8px; 
+            border: 1px solid var(--border); 
+            border-radius: 4px; 
+            font-size: 0.85rem; 
+        }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-        th { background-color: #f8f9fa; color: #555; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
-        .badge-pending { background-color: #ffebee; color: var(--danger); }
-        .badge-paid { background-color: #e8f5e9; color: var(--success); }
-        .btn-action { border: none; cursor: pointer; padding: 6px 10px; border-radius: 4px; font-size: 0.8rem; margin: 2px; }
+        .action-header-btns {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        /* Form Grid */
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; }
+        .form-group input, .form-group select { padding: 9px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.85rem; }
+
+        /* Tombol */
+        .btn { background-color: var(--primary); color: white; border: none; padding: 11px; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 15px; font-weight: bold; }
+        .btn:hover { background-color: var(--primary-hover); }
+        .btn-action { border: none; cursor: pointer; padding: 6px 12px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin: 2px; }
         .btn-pay { background-color: #e3f2fd; color: #1976d2; }
         .btn-share { background-color: var(--share-color); color: white; }
         .btn-print { background-color: var(--print-color); color: white; }
         .btn-edit { background-color: #fff3e0; color: var(--warning); }
         .btn-delete { background-color: #ffebee; color: var(--danger); }
-        .btn-secondary { background-color: #f5f5f5; border: 1px solid var(--border); color: #333; padding: 8px 14px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; }
-        .btn-primary-toggle { background-color: var(--primary); color: white; border: none; padding: 10px 16px; border-radius: 4px; cursor: pointer; font-size: 0.9rem; font-weight: bold; }
-        .btn-primary-toggle:hover { background-color: var(--primary-hover); }
+        .btn-secondary { background-color: #ffffff; border: 1px solid var(--border); color: #333; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600; flex: 1; text-align: center; }
+        .btn-export { background-color: #157347; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold; flex: 1; text-align: center; }
+        .btn-primary-toggle { background-color: var(--primary); color: white; border: none; padding: 10px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: bold; width: 100%; }
+
+        /* Desktop Table Default */
+        table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+        th { background-color: #f8f9fa; color: #555; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; display: inline-block; }
+        .badge-pending { background-color: #ffebee; color: var(--danger); }
+        .badge-paid { background-color: #e8f5e9; color: var(--success); }
+
+        /* Mobile View Response (Transform Table to Cards on Mobile Screen) */
+        @media screen and (max-width: 768px) {
+            .card-header-flex { flex-direction: column; align-items: stretch; }
+            
+            /* Sembunyikan Header Tabel pada HP */
+            table, thead, tbody, th, td, tr { display: block; }
+            thead tr { position: absolute; top: -9999px; left: -9999px; }
+            
+            /* Buat Baris Tabel Jadi Bentuk Kartu */
+            tr {
+                background: #ffffff;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                margin-bottom: 12px;
+                padding: 10px 12px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            }
+
+            td {
+                border: none;
+                border-bottom: 1px dashed #f0f0f0;
+                position: relative;
+                padding: 8px 0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                text-align: right;
+                font-size: 0.85rem;
+            }
+            td:last-child { border-bottom: none; }
+
+            /* Menampilkan Judul Kolom di Sebelah Kiri */
+            td::before {
+                content: attr(data-label);
+                font-weight: 700;
+                color: #666;
+                text-align: left;
+                padding-right: 10px;
+                font-size: 0.8rem;
+            }
+
+            /* Penataan Khusus Tombol Aksi di HP */
+            td[data-label="Aksi"] {
+                flex-direction: row;
+                justify-content: flex-end;
+                flex-wrap: wrap;
+                gap: 4px;
+                padding-top: 10px;
+                margin-top: 4px;
+            }
+            td[data-label="Aksi"]::before {
+                margin-right: auto;
+            }
+        }
 
         /* Style Modal Pop-Up Melayang */
         .modal-overlay {
@@ -64,26 +170,27 @@
             z-index: 1000;
             justify-content: center;
             align-items: center;
-            padding: 20px;
-            animation: fadeIn 0.3s ease;
+            padding: 15px;
+            animation: fadeIn 0.25s ease;
         }
 
         .modal-card {
             background: #ffffff;
             width: 100%;
-            max-width: 650px;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
             border-radius: 12px;
-            padding: 25px;
+            padding: 20px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            position: relative;
-            animation: slideUp 0.3s ease;
+            animation: slideUp 0.25s ease;
         }
 
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             border-bottom: 1px solid var(--border);
             padding-bottom: 10px;
         }
@@ -97,17 +204,10 @@
         }
         .close-modal-btn:hover { color: var(--danger); }
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        @keyframes slideUp {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        /* Style Kuitansi / Struk untuk Cetak */
+        /* Struk Cetak */
         #receiptArea { display: none; }
         @media print {
             body * { visibility: hidden; }
@@ -115,13 +215,11 @@
             #receiptArea {
                 display: block !important;
                 position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                max-width: 450px;
-                padding: 20px;
+                left: 0; top: 0;
+                width: 100%; max-width: 400px;
+                padding: 15px;
                 border: 2px dashed #000;
-                font-family: 'Courier New', Courier, monospace;
+                font-family: monospace;
             }
         }
     </style>
@@ -131,58 +229,57 @@
     <div class="container">
         <header>
             <h1>Sistem Tagihan Sampah</h1>
-            <p style="font-size: 0.9rem; margin-top: 5px; opacity: 0.9;">Kelola Iuran Berbagai Perumahan</p>
+            <p>Kelola Iuran Berbagai Perumahan</p>
         </header>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+        <div class="action-header-btns">
             <button type="button" class="btn-primary-toggle" onclick="openModal()">+ Tambah Data Warga</button>
-            <div style="display: flex; gap: 8px;">
+            <div style="display: flex; gap: 8px; width: 100%;">
                 <button type="button" class="btn-secondary" onclick="tambahNamaPerumahan()">+ Perumahan</button>
-                <button type="button" class="btn-secondary" onclick="editNamaPerumahan()" style="color: var(--warning);">✎ Edit Nama Perumahan</button>
+                <button type="button" class="btn-secondary" onclick="editNamaPerumahan()" style="color: var(--warning);">✎ Edit Nama</button>
             </div>
         </div>
 
         <div class="card">
             <div class="card-header-flex">
-                <h3>Daftar Tagihan Iuran</h3>
+                <h3 style="font-size: 1.1rem;">Daftar Tagihan Iuran</h3>
                 <div class="filters-group">
                     <div class="filter-item">
                         <label for="filterPerumahan">Perumahan:</label>
-                        <select id="filterPerumahan" onchange="renderTable()" style="padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px;">
+                        <select id="filterPerumahan" onchange="renderTable()">
                             <option value="Semua">Semua Perumahan</option>
                         </select>
                     </div>
                     <div class="filter-item">
                         <label for="filterBulan">Periode:</label>
-                        <input type="month" id="filterBulan" onchange="renderTable()" style="padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px;">
+                        <input type="month" id="filterBulan" onchange="renderTable()">
                     </div>
+                    <button type="button" class="btn-export" onclick="exportToCSV()">📥 Backup CSV</button>
                 </div>
             </div>
-            <div style="overflow-x: auto;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nama</th>
-                            <th>Perumahan</th>
-                            <th>Nomor Rumah</th>
-                            <th>Nomor WA</th>
-                            <th>Iuran</th>
-                            <th>Jatuh Tempo</th>
-                            <th>Status</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="billTableBody"></tbody>
-                </table>
-            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nama</th>
+                        <th>Perumahan</th>
+                        <th>Nomor Rumah</th>
+                        <th>Nomor WA</th>
+                        <th>Iuran</th>
+                        <th>Jatuh Tempo</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="billTableBody"></tbody>
+            </table>
         </div>
     </div>
 
-    <!-- Modal Form Melayang -->
     <div class="modal-overlay" id="modalFormOverlay">
         <div class="modal-card">
             <div class="modal-header">
-                <h3 id="formTitle">Tambah Data Warga</h3>
+                <h3 id="formTitle" style="font-size: 1.1rem;">Tambah Data Warga</h3>
                 <button class="close-modal-btn" onclick="closeModal()">&times;</button>
             </div>
             
@@ -216,32 +313,30 @@
                         <input type="date" id="jatuhTempo" required>
                     </div>
                 </div>
-                <div style="display: flex; gap: 10px;">
-                    <button type="submit" class="btn" id="btnSubmit">Simpan Data Tagihan</button>
+                <div style="display: flex; gap: 8px; margin-top: 10px;">
+                    <button type="submit" class="btn" id="btnSubmit">Simpan Data</button>
                     <button type="button" class="btn" style="background-color: #757575;" onclick="closeModal()">Batal</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Template Struk Kuitansi Cetak -->
     <div id="receiptArea">
-        <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
-            <h3 style="margin-bottom: 5px;">BUKTI PEMBAYARAN IURAN</h3>
-            <p id="rPerumahan" style="font-weight: bold;"></p>
+        <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px;">
+            <h3 style="font-size: 1rem;">BUKTI PEMBAYARAN IURAN</h3>
+            <p id="rPerumahan" style="font-weight: bold; font-size: 0.9rem;"></p>
         </div>
-        <table style="width: 100%; font-size: 0.85rem; border: none; margin-bottom: 10px;">
-            <tr><td>No. Transaksi</td><td>:</td><td id="rNoTrans"></td></tr>
-            <tr><td>Tanggal Lunas</td><td>:</td><td id="rTglLunas"></td></tr>
-            <tr><td>Nama Warga</td><td>:</td><td id="rNama"></td></tr>
+        <table style="width: 100%; font-size: 0.8rem; border: none; margin-bottom: 8px;">
+            <tr><td>No. TRX</td><td>:</td><td id="rNoTrans"></td></tr>
+            <tr><td>Tanggal</td><td>:</td><td id="rTglLunas"></td></tr>
+            <tr><td>Warga</td><td>:</td><td id="rNama"></td></tr>
             <tr><td>No. Rumah</td><td>:</td><td id="rNoRumah"></td></tr>
             <tr><td>Jatuh Tempo</td><td>:</td><td id="rTempo"></td></tr>
-            <tr><td>Jumlah Iuran</td><td>:</td><td id="rNominal" style="font-weight: bold;"></td></tr>
+            <tr><td>Total</td><td>:</td><td id="rNominal" style="font-weight: bold;"></td></tr>
             <tr><td>Status</td><td>:</td><td style="font-weight: bold;">[ LUNAS ]</td></tr>
         </table>
-        <div style="text-align: center; border-top: 1px dashed #000; padding-top: 10px; font-size: 0.8rem;">
+        <div style="text-align: center; border-top: 1px dashed #000; padding-top: 8px; font-size: 0.75rem;">
             <p>Terima kasih atas pembayaran Anda.</p>
-            <p>-- Simpan sebagai bukti sah --</p>
         </div>
     </div>
 
@@ -264,27 +359,47 @@
             renderTable();
         });
 
-        function openModal() {
-            document.getElementById('modalFormOverlay').style.display = 'flex';
-        }
+        function openModal() { document.getElementById('modalFormOverlay').style.display = 'flex'; }
+        function closeModal() { document.getElementById('modalFormOverlay').style.display = 'none'; resetForm(); }
 
-        function closeModal() {
-            document.getElementById('modalFormOverlay').style.display = 'none';
-            resetForm();
-        }
-
-        // Tutup modal jika user mengklik area gelap di luar box
         window.onclick = function(e) {
-            const overlay = document.getElementById('modalFormOverlay');
-            if (e.target === overlay) {
-                closeModal();
+            if (e.target === document.getElementById('modalFormOverlay')) closeModal();
+        }
+
+        function exportToCSV() {
+            const selectedMonth = document.getElementById('filterBulan').value;
+            const selectedPerumahan = document.getElementById('filterPerumahan').value;
+
+            const filteredBills = bills.filter(bill => {
+                const matchMonth = bill.jatuhTempo.startsWith(selectedMonth);
+                const matchPerumahan = selectedPerumahan === 'Semua' || bill.namaPerumahan === selectedPerumahan;
+                return matchMonth && matchPerumahan;
+            });
+
+            if (filteredBills.length === 0) {
+                alert("Tidak ada data untuk diunduh pada periode ini.");
+                return;
             }
+
+            let csvContent = "\uFEFFID,Nama Warga,Perumahan,No Rumah,No WhatsApp,Jumlah Iuran,Jatuh Tempo,Status\n";
+            filteredBills.forEach(b => {
+                csvContent += `"${b.id}","${b.namaPemilik.replace(/"/g, '""')}","${b.namaPerumahan.replace(/"/g, '""')}","${b.noRumah.replace(/"/g, '""')}","${b.noWhatsapp}",${b.jumlahIuran},"${b.jatuhTempo}","${b.status}"\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            const fileName = `Backup_${selectedPerumahan === 'Semua' ? 'Semua' : selectedPerumahan}_${selectedMonth}.csv`;
+            link.setAttribute("href", url);
+            link.setAttribute("download", fileName);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         function printReceipt(id) {
             const bill = bills.find(b => b.id === id);
             if (!bill) return;
-
             document.getElementById('rPerumahan').textContent = bill.namaPerumahan;
             document.getElementById('rNoTrans').textContent = 'TRX-' + bill.id;
             document.getElementById('rTglLunas').textContent = formatDate(new Date().toISOString().split('T')[0]);
@@ -292,7 +407,6 @@
             document.getElementById('rNoRumah').textContent = bill.noRumah;
             document.getElementById('rTempo').textContent = formatDate(bill.jatuhTempo);
             document.getElementById('rNominal').textContent = formatRupiah(bill.jumlahIuran);
-
             window.print();
         }
 
@@ -305,9 +419,7 @@
                     saveMasterPerumahan();
                     renderPerumahanDropdowns();
                     document.getElementById('namaPerumahan').value = nama;
-                } else {
-                    alert("Nama perumahan tersebut sudah ada!");
-                }
+                } else alert("Nama perumahan tersebut sudah ada!");
             }
         }
 
@@ -316,20 +428,15 @@
                 ? document.getElementById('filterPerumahan').value 
                 : document.getElementById('namaPerumahan').value;
 
-            if (!selectedCurrent) {
-                alert("Pilih perumahan yang ingin diubah!");
-                return;
-            }
+            if (!selectedCurrent) { alert("Pilih perumahan yang ingin diubah!"); return; }
 
-            const namaBaru = prompt(`Ubah nama perumahan "${selectedCurrent}" menjadi:`, selectedCurrent);
+            const namaBaru = prompt(`Ubah nama "${selectedCurrent}" menjadi:`, selectedCurrent);
             if (namaBaru && namaBaru.trim() !== "" && namaBaru.trim() !== selectedCurrent) {
                 const namaClean = namaBaru.trim();
                 masterPerumahan = masterPerumahan.map(p => p === selectedCurrent ? namaClean : p);
                 saveMasterPerumahan();
-
                 bills = bills.map(b => b.namaPerumahan === selectedCurrent ? { ...b, namaPerumahan: namaClean } : b);
                 saveData();
-
                 renderPerumahanDropdowns();
                 document.getElementById('filterPerumahan').value = namaClean;
                 renderTable();
@@ -388,7 +495,6 @@
 
             document.getElementById('filterBulan').value = inputTempo.slice(0, 7);
             document.getElementById('filterPerumahan').value = inputPerumahan;
-
             saveData();
             renderTable();
             closeModal();
@@ -408,7 +514,6 @@
 
             document.getElementById('formTitle').textContent = "Edit Data Warga";
             document.getElementById('btnSubmit').textContent = "Update Data";
-
             openModal();
         }
 
@@ -416,7 +521,7 @@
             document.getElementById('billForm').reset();
             document.getElementById('editId').value = "";
             document.getElementById('formTitle').textContent = "Tambah Data Warga";
-            document.getElementById('btnSubmit').textContent = "Simpan Data Tagihan";
+            document.getElementById('btnSubmit').textContent = "Simpan Data";
         }
 
         function formatRupiah(amount) {
@@ -445,7 +550,7 @@
             const bill = bills.find(b => b.id === id);
             const nextDate = getNextMonthDate(bill.jatuhTempo);
 
-            if (confirm(`Konfirmasi Pembayaran:\nAtas Nama: ${bill.namaPemilik} (${bill.namaPerumahan} - ${bill.noRumah})\n\nTagihan bulan ini akan disimpan sebagai LUNAS, dan tagihan baru periode (${formatDate(nextDate)}) otomatis dibuat.`)) {
+            if (confirm(`Konfirmasi Pembayaran:\n\nNama: ${bill.namaPemilik} (${bill.noRumah})\nPerumahan: ${bill.namaPerumahan}\n\nLanjutkan pembayaran?`)) {
                 bills = bills.map(b => b.id === id ? {...b, status: 'Lunas'} : b);
 
                 bills.push({
@@ -504,7 +609,7 @@
             });
 
             if (filteredBills.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#888;">Tidak ada data tagihan untuk kriteria ini.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#888; padding: 20px;">Tidak ada data tagihan untuk kriteria ini.</td></tr>`;
                 return;
             }
 
@@ -514,14 +619,14 @@
                 const isPaid = bill.status === 'Lunas';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td><strong>${bill.namaPemilik}</strong></td>
-                    <td>${bill.namaPerumahan}</td>
-                    <td>${bill.noRumah}</td>
-                    <td>${bill.noWhatsapp}</td>
-                    <td>${formatRupiah(bill.jumlahIuran)}</td>
-                    <td>${formatDate(bill.jatuhTempo)}</td>
-                    <td><span class="badge ${isPaid ? 'badge-paid' : 'badge-pending'}">${bill.status}</span></td>
-                    <td>
+                    <td data-label="Nama"><strong>${bill.namaPemilik}</strong></td>
+                    <td data-label="Perumahan">${bill.namaPerumahan}</td>
+                    <td data-label="No. Rumah">${bill.noRumah}</td>
+                    <td data-label="No. WA">${bill.noWhatsapp}</td>
+                    <td data-label="Iuran">${formatRupiah(bill.jumlahIuran)}</td>
+                    <td data-label="Jatuh Tempo">${formatDate(bill.jatuhTempo)}</td>
+                    <td data-label="Status"><span class="badge ${isPaid ? 'badge-paid' : 'badge-pending'}">${bill.status}</span></td>
+                    <td data-label="Aksi">
                         ${!isPaid ? `<button class="btn-action btn-pay" onclick="markAsPaid(${bill.id})">Bayar</button>` : ''}
                         ${!isPaid ? `<button class="btn-action btn-share" onclick="shareReminder(${bill.id})">Ingatkan</button>` : ''}
                         ${isPaid ? `<button class="btn-action btn-print" onclick="printReceipt(${bill.id})">Cetak Struk</button>` : ''}
