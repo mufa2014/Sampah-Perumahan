@@ -96,7 +96,7 @@
 
         function savePerumahanName() { 
             localStorage.setItem('perumahan_nama', document.getElementById('namaPerumahan').value); 
-            renderTable(); // Update tampilan tabel saat nama perumahan diubah
+            renderTable();
         }
 
         document.getElementById('billForm').addEventListener('submit', function(e) {
@@ -115,23 +115,59 @@
             this.reset();
         });
 
-        // Format Rupiah
         function formatRupiah(amount) {
             return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(amount);
         }
 
-        // Format Tanggal Indonesia
         function formatDate(dateString) {
             if (!dateString) return '-';
             const options = { day: 'numeric', month: 'short', year: 'numeric' };
-            return new Date(dateString).toLocaleDateString('id-ID', options);
+            return new Date(dateString + 'T00:00:00').toLocaleDateString('id-ID', options);
         }
 
-        // Konfirmasi Pembayaran
+        // Fungsi Menambah 1 Bulan Otomatis
+        function getNextMonthDate(dateString) {
+            const date = new Date(dateString + 'T00:00:00');
+            const currentDay = date.getDate();
+            
+            // Tambah 1 bulan
+            date.setMonth(date.getMonth() + 1);
+
+            // Penanganan jika bulan depan memiliki jumlah hari lebih sedikit (misal: 31 Jan -> Feb)
+            if (date.getDate() !== currentDay) {
+                date.setDate(0); // Set ke hari terakhir bulan sebelumnya
+            }
+
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+
+            return `${year}-${month}-${day}`;
+        }
+
+        // Konfirmasi Pembayaran dan Buat Tagihan Bulan Depan
         function markAsPaid(id) {
             const bill = bills.find(b => b.id === id);
-            if (confirm(`Apakah Anda yakin bahwa tagihan atas nama ${bill.namaPemilik} (${bill.noRumah}) sudah LUNAS?`)) {
+            if (confirm(`Apakah Anda yakin bahwa tagihan atas nama ${bill.namaPemilik} (${bill.noRumah}) sudah LUNAS?\n\nCatatan: Tagihan baru untuk bulan depan akan otomatis dibuat.`)) {
+                // 1. Ubah status tagihan saat ini menjadi Lunas
                 bills = bills.map(b => b.id === id ? {...b, status: 'Lunas'} : b);
+
+                // 2. Hitung tanggal jatuh tempo 1 bulan ke depan
+                const nextJatuhTempo = getNextMonthDate(bill.jatuhTempo);
+
+                // 3. Tambahkan tagihan baru untuk bulan berikutnya
+                const newBill = {
+                    id: Date.now(),
+                    namaPemilik: bill.namaPemilik,
+                    noRumah: bill.noRumah,
+                    noWhatsapp: bill.noWhatsapp,
+                    jumlahIuran: bill.jumlahIuran,
+                    jatuhTempo: nextJatuhTempo,
+                    status: 'Belum Bayar'
+                };
+
+                bills.push(newBill);
+
                 saveData();
                 renderTable();
             }
@@ -145,7 +181,6 @@
             }
         }
 
-        // Fungsi Share (Native Share API)
         async function shareReminder(id) {
             const bill = bills.find(b => b.id === id);
             const namaPerumahan = localStorage.getItem('perumahan_nama') || 'Perumahan';
@@ -171,7 +206,10 @@
             const namaPerumahan = localStorage.getItem('perumahan_nama') || '-';
             tbody.innerHTML = bills.length === 0 ? `<tr><td colspan="8" style="text-align:center; color:#888;">Belum ada data tagihan.</td></tr>` : '';
             
-            bills.forEach(bill => {
+            // Urutkan data berdasarkan ID terbaru di atas
+            const sortedBills = [...bills].reverse();
+
+            sortedBills.forEach(bill => {
                 const isPaid = bill.status === 'Lunas';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
