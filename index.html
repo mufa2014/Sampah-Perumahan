@@ -1,1 +1,412 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Tagihan Sampah Perumahan</title>
+    <style>
+        :root {
+            --primary: #2e7d32;
+            --primary-hover: #1b5e20;
+            --bg: #f4f6f8;
+            --card-bg: #ffffff;
+            --text: #333333;
+            --border: #e0e0e0;
+            --danger: #d32f2f;
+            --success: #388e3c;
+            --wa-color: #25d366;
+        }
 
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        header input {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            font-size: 1.2rem;
+            text-align: center;
+            padding: 5px;
+            border-radius: 4px;
+            width: 80%;
+            max-width: 400px;
+            margin-top: 5px;
+        }
+
+        header input::placeholder {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        .form-group input {
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.95rem;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            margin-top: 15px;
+            width: 100%;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: #555;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .badge-pending {
+            background-color: #ffebee;
+            color: var(--danger);
+        }
+
+        .badge-paid {
+            background-color: #e8f5e9;
+            color: var(--success);
+        }
+
+        .btn-wa {
+            background-color: var(--wa-color);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        .btn-wa:hover {
+            opacity: 0.9;
+        }
+
+        .btn-action {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .btn-pay {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .btn-delete {
+            background-color: #ffebee;
+            color: var(--danger);
+        }
+
+        .actions-cell {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Sistem Tagihan Sampah</h1>
+            <input type="text" id="namaPerumahan" placeholder="Masukkan Nama Perumahan" oninput="savePerumahanName()">
+        </header>
+
+        <div class="card">
+            <h3>Tambah Data Warga</h3>
+            <form id="billForm" style="margin-top: 15px;">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="namaPemilik">Nama Pemilik</label>
+                        <input type="text" id="namaPemilik" required placeholder="Contoh: Budi Santoso">
+                    </div>
+                    <div class="form-group">
+                        <label for="noRumah">No. Rumah</label>
+                        <input type="text" id="noRumah" required placeholder="Contoh: A-12">
+                    </div>
+                    <div class="form-group">
+                        <label for="noWhatsapp">No. WhatsApp</label>
+                        <input type="tel" id="noWhatsapp" required placeholder="Contoh: 081234567890">
+                    </div>
+                    <div class="form-group">
+                        <label for="jumlahIuran">Jumlah Iuran (Rp)</label>
+                        <input type="number" id="jumlahIuran" required placeholder="Contoh: 50000">
+                    </div>
+                    <div class="form-group">
+                        <label for="jatuhTempo">Tanggal Jatuh Tempo</label>
+                        <input type="date" id="jatuhTempo" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn">Simpan Data Tagihan</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>Daftar Tagihan Iuran</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No. Rumah</th>
+                            <th>Nama</th>
+                            <th>Iuran</th>
+                            <th>Jatuh Tempo</th>
+                            <th>Tgl Bayar</th>
+                            <th>Status</th>
+                            <th>Pengingat</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="billTableBody">
+                        <!-- Data akan diisi oleh JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let bills = JSON.parse(localStorage.getItem('perumahan_bills')) || [];
+
+        // Load Nama Perumahan
+        document.addEventListener("DOMContentLoaded", () => {
+            const savedPerumahan = localStorage.getItem('perumahan_nama');
+            if (savedPerumahan) {
+                document.getElementById('namaPerumahan').value = savedPerumahan;
+            }
+            renderTable();
+        });
+
+        function savePerumahanName() {
+            const name = document.getElementById('namaPerumahan').value;
+            localStorage.setItem('perumahan_nama', name);
+        }
+
+        // Handle Form Submit
+        document.getElementById('billForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const bill = {
+                id: Date.now(),
+                namaPemilik: document.getElementById('namaPemilik').value,
+                noRumah: document.getElementById('noRumah').value,
+                noWhatsapp: formatWhatsapp(document.getElementById('noWhatsapp').value),
+                jumlahIuran: parseInt(document.getElementById('jumlahIuran').value),
+                jatuhTempo: document.getElementById('jatuhTempo').value,
+                tanggalBayar: null,
+                status: 'Belum Bayar'
+            };
+
+            bills.push(bill);
+            saveData();
+            renderTable();
+            this.reset();
+        });
+
+        // Format nomor WhatsApp ke standar internasional (+62)
+        function formatWhatsapp(number) {
+            let formatted = number.replace(/\D/g, '');
+            if (formatted.startsWith('0')) {
+                formatted = '62' + formatted.slice(1);
+            }
+            return formatted;
+        }
+
+        // Format Rupiah
+        function formatRupiah(amount) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(amount);
+        }
+
+        // Format Tanggal Indonesia
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const options = { day: 'numeric', month: 'short', year: 'numeric' };
+            return new Date(dateString).toLocaleDateString('id-ID', options);
+        }
+
+        // Kirim Pengingat WhatsApp
+        function sendWaReminder(id) {
+            const bill = bills.find(b => b.id === id);
+            const namaPerumahan = localStorage.getItem('perumahan_nama') || 'Perumahan';
+            
+            const message = `Halo Bapak/Ibu *${bill.namaPemilik}* (${bill.noRumah}),%0A%0A` +
+                `Mengingatkan untuk pembayaran *Iuran Sampah ${namaPerumahan}* sebesar *${formatRupiah(bill.jumlahIuran)}* %0A` +
+                `Tanggal Jatuh Tempo: *${formatDate(bill.jatuhTempo)}*.%0A%0A` +
+                `Mohon segera melakukan pembayaran. Terima kasih!`;
+
+            window.open(`https://wa.me/${bill.noWhatsapp}?text=${message}`, '_blank');
+        }
+
+        // Toggle Status Pembayaran
+        function togglePayStatus(id) {
+            bills = bills.map(bill => {
+                if (bill.id === id) {
+                    if (bill.status === 'Belum Bayar') {
+                        bill.status = 'Lunas';
+                        bill.tanggalBayar = new Date().toISOString().split('T')[0];
+                    } else {
+                        bill.status = 'Belum Bayar';
+                        bill.tanggalBayar = null;
+                    }
+                }
+                return bill;
+            });
+            saveData();
+            renderTable();
+        }
+
+        // Hapus Data
+        function deleteBill(id) {
+            if (confirm('Yakin ingin menghapus data ini?')) {
+                bills = bills.filter(bill => bill.id !== id);
+                saveData();
+                renderTable();
+            }
+        }
+
+        // Save data ke LocalStorage
+        function saveData() {
+            localStorage.setItem('perumahan_bills', JSON.stringify(bills));
+        }
+
+        // Render Tabel Data
+        function renderTable() {
+            const tbody = document.getElementById('billTableBody');
+            tbody.innerHTML = '';
+
+            if (bills.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#888;">Belum ada data tagihan.</td></tr>`;
+                return;
+            }
+
+            bills.forEach(bill => {
+                const tr = document.createElement('tr');
+                const isPaid = bill.status === 'Lunas';
+                
+                tr.innerHTML = `
+                    <td><strong>${bill.noRumah}</strong></td>
+                    <td>${bill.namaPemilik}</td>
+                    <td>${formatRupiah(bill.jumlahIuran)}</td>
+                    <td>${formatDate(bill.jatuhTempo)}</td>
+                    <td>${formatDate(bill.tanggalBayar)}</td>
+                    <td>
+                        <span class="badge ${isPaid ? 'badge-paid' : 'badge-pending'}">
+                            ${bill.status}
+                        </span>
+                    </td>
+                    <td>
+                        ${!isPaid ? `<button class="btn-wa" onclick="sendWaReminder(${bill.id})"> Kirim WA</button>` : '-'}
+                    </td>
+                    <td>
+                        <div class="actions-cell">
+                            <button class="btn-action btn-pay" onclick="togglePayStatus(${bill.id})">
+                                ${isPaid ? 'Batal' : 'Bayar'}
+                            </button>
+                            <button class="btn-action btn-delete" onclick="deleteBill(${bill.id})">Hapus</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>
