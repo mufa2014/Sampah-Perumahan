@@ -65,7 +65,7 @@
         </div>
 
         <div class="card">
-            <h3>Daftar Tagihan Iuran</h3>
+            <h3>Daftar Riwayat & Tagihan Iuran</h3>
             <div style="overflow-x: auto;">
                 <table>
                     <thead>
@@ -125,7 +125,6 @@
             return new Date(dateString + 'T00:00:00').toLocaleDateString('id-ID', options);
         }
 
-        // Hitung tanggal 1 bulan ke depan secara presisi
         function getNextMonthDate(dateString) {
             const date = new Date(dateString + 'T00:00:00');
             const currentDay = date.getDate();
@@ -143,23 +142,27 @@
             return `${year}-${month}-${day}`;
         }
 
-        // Proses Bayar: Perbarui data yang ada tanpa menambah baris baru
         function markAsPaid(id) {
             const bill = bills.find(b => b.id === id);
             const nextDate = getNextMonthDate(bill.jatuhTempo);
 
-            if (confirm(`Konfirmasi Pembayaran:\nAtas Nama: ${bill.namaPemilik} (${bill.noRumah})\n\nSetelah dikonfirmasi, tanggal jatuh tempo akan otomatis diperbarui ke bulan berikutnya (${formatDate(nextDate)}).`)) {
+            if (confirm(`Konfirmasi Pembayaran:\nAtas Nama: ${bill.namaPemilik} (${bill.noRumah})\n\nTagihan ini akan diubah menjadi LUNAS sebagai riwayat, dan tagihan baru untuk bulan berikutnya (${formatDate(nextDate)}) akan otomatis dibuat.`)) {
                 
-                bills = bills.map(b => {
-                    if (b.id === id) {
-                        return {
-                            ...b,
-                            jatuhTempo: nextDate,
-                            status: 'Belum Bayar' // Siap untuk periode tagihan berikutnya
-                        };
-                    }
-                    return b;
-                });
+                // 1. Ubah status bulan ini menjadi Lunas (menjadi riwayat)
+                bills = bills.map(b => b.id === id ? {...b, status: 'Lunas'} : b);
+
+                // 2. Buat baris tagihan baru untuk bulan depan
+                const newBill = {
+                    id: Date.now(),
+                    namaPemilik: bill.namaPemilik,
+                    noRumah: bill.noRumah,
+                    noWhatsapp: bill.noWhatsapp,
+                    jumlahIuran: bill.jumlahIuran,
+                    jatuhTempo: nextDate,
+                    status: 'Belum Bayar'
+                };
+
+                bills.push(newBill);
 
                 saveData();
                 renderTable();
@@ -167,7 +170,7 @@
         }
 
         function deleteBill(id) {
-            if (confirm('Yakin ingin menghapus data warga ini?')) {
+            if (confirm('Yakin ingin menghapus data riwayat/tagihan ini?')) {
                 bills = bills.filter(b => b.id !== id);
                 saveData();
                 renderTable();
@@ -199,7 +202,11 @@
             const namaPerumahan = localStorage.getItem('perumahan_nama') || '-';
             tbody.innerHTML = bills.length === 0 ? `<tr><td colspan="8" style="text-align:center; color:#888;">Belum ada data tagihan.</td></tr>` : '';
 
-            bills.forEach(bill => {
+            // Urutkan dari yang terbaru di atas
+            const sortedBills = [...bills].reverse();
+
+            sortedBills.forEach(bill => {
+                const isPaid = bill.status === 'Lunas';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><strong>${bill.namaPemilik}</strong></td>
@@ -208,10 +215,10 @@
                     <td>${bill.noWhatsapp}</td>
                     <td>${formatRupiah(bill.jumlahIuran)}</td>
                     <td>${formatDate(bill.jatuhTempo)}</td>
-                    <td><span class="badge badge-pending">${bill.status}</span></td>
+                    <td><span class="badge ${isPaid ? 'badge-paid' : 'badge-pending'}">${bill.status}</span></td>
                     <td>
-                        <button class="btn-action btn-pay" onclick="markAsPaid(${bill.id})">Bayar</button>
-                        <button class="btn-action btn-share" onclick="shareReminder(${bill.id})">Share</button>
+                        ${!isPaid ? `<button class="btn-action btn-pay" onclick="markAsPaid(${bill.id})">Bayar</button>` : ''}
+                        ${!isPaid ? `<button class="btn-action btn-share" onclick="shareReminder(${bill.id})">Share</button>` : ''}
                         <button class="btn-action btn-delete" onclick="deleteBill(${bill.id})">Hapus</button>
                     </td>
                 `;
