@@ -59,9 +59,12 @@
         </header>
 
         <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                 <h3 id="formTitle">Tambah Data Warga</h3>
-                <button type="button" class="btn-secondary" onclick="tambahNamaPerumahan()">+ Kelola Master Perumahan</button>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn-secondary" onclick="tambahNamaPerumahan()">+ Perumahan</button>
+                    <button type="button" class="btn-secondary" onclick="editNamaPerumahan()" style="color: var(--warning);">✎ Edit Nama Perumahan</button>
+                </div>
             </div>
             
             <form id="billForm">
@@ -147,7 +150,6 @@
             const month = String(now.getMonth() + 1).padStart(2, '0');
             document.getElementById('filterBulan').value = `${year}-${month}`;
 
-            // Sync master perumahan dari data awal jika kosong
             if (masterPerumahan.length === 0 && bills.length > 0) {
                 masterPerumahan = [...new Set(bills.map(b => b.namaPerumahan))];
                 saveMasterPerumahan();
@@ -172,6 +174,39 @@
             }
         }
 
+        function editNamaPerumahan() {
+            const selectedCurrent = document.getElementById('namaPerumahan').value;
+            if (!selectedCurrent) {
+                alert("Pilih nama perumahan di dropdown form terlebih dahulu yang ingin diubah!");
+                return;
+            }
+
+            const namaBaru = prompt(`Ubah nama perumahan "${selectedCurrent}" menjadi:`, selectedCurrent);
+            if (namaBaru && namaBaru.trim() !== "" && namaBaru.trim() !== selectedCurrent) {
+                const namaClean = namaBaru.trim();
+                
+                // 1. Update Master Perumahan
+                masterPerumahan = masterPerumahan.map(p => p === selectedCurrent ? namaClean : p);
+                saveMasterPerumahan();
+
+                // 2. Update Semua Tagihan Warga yang menggunakan nama perumahan lama
+                bills = bills.map(b => {
+                    if (b.namaPerumahan === selectedCurrent) {
+                        return { ...b, namaPerumahan: namaClean };
+                    }
+                    return b;
+                });
+                saveData();
+
+                // 3. Render ulang tampilan
+                renderPerumahanDropdowns();
+                document.getElementById('namaPerumahan').value = namaClean;
+                renderTable();
+
+                alert("Nama perumahan dan seluruh riwayat tagihannya berhasil diperbarui!");
+            }
+        }
+
         function renderPerumahanDropdowns() {
             const selectForm = document.getElementById('namaPerumahan');
             const selectFilter = document.getElementById('filterPerumahan');
@@ -179,7 +214,6 @@
             const currentFilterVal = selectFilter.value;
             const currentFormVal = selectForm.value;
 
-            // Urutkan nama perumahan sesuai abjad dan nomor secara alami (Natural Sort)
             masterPerumahan.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
             selectForm.innerHTML = '<option value="">-- Pilih Perumahan --</option>';
