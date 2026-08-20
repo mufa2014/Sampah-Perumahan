@@ -286,7 +286,7 @@
             }
 
             .receipt-table td.label {
-                width: 38%;
+                width: 42%;
             }
 
             .receipt-table td.colon {
@@ -295,7 +295,7 @@
             }
 
             .receipt-table td.val {
-                width: 57%;
+                width: 53%;
                 text-align: left;
                 word-break: break-word;
             }
@@ -422,11 +422,6 @@
                 <td class="val" id="rNoTrans"></td>
             </tr>
             <tr>
-                <td class="label">Tanggal</td>
-                <td class="colon">:</td>
-                <td class="val" id="rTglLunas"></td>
-            </tr>
-            <tr>
                 <td class="label">Warga</td>
                 <td class="colon">:</td>
                 <td class="val" id="rNama"></td>
@@ -437,7 +432,7 @@
                 <td class="val" id="rNoRumah"></td>
             </tr>
             <tr>
-                <td class="label">Periode</td>
+                <td class="label">Jatuh Tempo</td>
                 <td class="colon">:</td>
                 <td class="val" id="rTempo"></td>
             </tr>
@@ -502,7 +497,7 @@
 
             // Dialog Konfirmasi Lanjut / Batal
             const isConfirmed = confirm(`Apakah Anda yakin ingin mengunduh data ke EXCEL?\n\n- Perumahan: ${selectedPerumahan}\n- Periode: ${selectedMonth}\n- Jumlah Data: ${filteredBills.length} baris`);
-            if (!isConfirmed) return; // Batal jika pengguna memilih 'Cancel'
+            if (!isConfirmed) return;
 
             const excelData = filteredBills.map(b => ({
                 'Nama Warga': b.namaPemilik,
@@ -556,7 +551,7 @@
 
             // Dialog Konfirmasi Lanjut / Batal
             const isConfirmed = confirm(`Apakah Anda yakin ingin mencetak/mengunduh dokumen PDF?\n\n- Perumahan: ${selectedPerumahan}\n- Periode: ${selectedMonth}\n- Jumlah Data: ${filteredBills.length} baris`);
-            if (!isConfirmed) return; // Batal jika pengguna memilih 'Cancel'
+            if (!isConfirmed) return;
 
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('landscape');
@@ -625,7 +620,6 @@
 
             document.getElementById('rPerumahan').textContent = bill.namaPerumahan;
             document.getElementById('rNoTrans').textContent = 'TRX-' + String(bill.id).slice(-8);
-            document.getElementById('rTglLunas').textContent = formatDate(new Date().toISOString().split('T')[0]);
             document.getElementById('rNama').textContent = bill.namaPemilik;
             document.getElementById('rNoRumah').textContent = bill.noRumah;
             document.getElementById('rTempo').textContent = formatDate(bill.jatuhTempo);
