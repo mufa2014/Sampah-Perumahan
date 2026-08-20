@@ -6,6 +6,9 @@
     <title>Aplikasi Tagihan Sampah Multi-Perumahan</title>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
     <style>
         :root {
@@ -100,8 +103,8 @@
         .btn-export { background-color: #157347; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold; flex: 1; text-align: center; }
         .btn-export:hover { background-color: #115c38; }
 
-        .btn-restore { background-color: #0d6efd; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold; flex: 1; text-align: center; }
-        .btn-restore:hover { background-color: #0b5ed7; }
+        .btn-pdf { background-color: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold; flex: 1; text-align: center; }
+        .btn-pdf:hover { background-color: #bb2d3b; }
 
         .btn-primary-toggle { background-color: var(--primary); color: white; border: none; padding: 10px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: bold; width: 100%; }
 
@@ -212,13 +215,10 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        /* ========================================================== */
-        /* ATURAN KHUSUS STRUK THERMAL (PRINTING)                     */
-        /* ========================================================== */
+        /* ATURAN STRUK THERMAL (PRINTING) */
         #receiptArea { display: none; }
 
         @media print {
-            /* Atur ukuran halaman printer thermal (Ganti 58mm ke 80mm jika memakai printer 80mm) */
             @page {
                 size: 58mm auto;
                 margin: 0;
@@ -342,8 +342,7 @@
                     </div>
                     <div style="display: flex; gap: 6px; width: 100%;">
                         <button type="button" class="btn-export" onclick="exportToExcel()">📊 Backup Excel</button>
-                        <button type="button" class="btn-restore" onclick="document.getElementById('restoreFileInput').click()">📥 Restore Excel</button>
-                        <input type="file" id="restoreFileInput" accept=".xlsx, .xls" style="display: none;" onchange="restoreFromExcel(event)">
+                        <button type="button" class="btn-pdf" onclick="exportToPDF()">📄 Export PDF</button>
                     </div>
                 </div>
             </div>
@@ -485,6 +484,7 @@
             if (e.target === document.getElementById('modalFormOverlay')) closeModal();
         }
 
+        // FUNGSI EXPORT EXCEL
         function exportToExcel() {
             const selectedMonth = document.getElementById('filterBulan').value;
             const selectedPerumahan = document.getElementById('filterPerumahan').value;
@@ -534,76 +534,80 @@
             XLSX.writeFile(workbook, fileName);
         }
 
-        function restoreFromExcel(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+        // FUNGSI EXPORT PDF BERKOTAK-KOTAK (EXCEL GRID STYLE)
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('landscape'); // Menggunakan orientasi Lanskap agar muat rapi
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    
-                    const jsonRows = XLSX.utils.sheet_to_json(worksheet, { raw: false });
+            const selectedMonth = document.getElementById('filterBulan').value;
+            const selectedPerumahan = document.getElementById('filterPerumahan').value;
 
-                    if (jsonRows.length === 0) {
-                        alert("File Excel kosong atau format tidak sesuai.");
-                        return;
-                    }
+            const filteredBills = bills.filter(bill => {
+                const matchMonth = bill.jatuhTempo.startsWith(selectedMonth);
+                const matchPerumahan = selectedPerumahan === 'Semua' || bill.namaPerumahan === selectedPerumahan;
+                return matchMonth && matchPerumahan;
+            });
 
-                    if (!confirm(`Ditemukan ${jsonRows.length} data tagihan dari file Excel.\n\nApakah Anda yakin ingin memuat/menambahkan data ini ke sistem?`)) {
-                        event.target.value = '';
-                        return;
-                    }
+            if (filteredBills.length === 0) {
+                alert("Tidak ada data untuk di-export ke PDF pada periode ini.");
+                return;
+            }
 
-                    let addedCount = 0;
+            // Judul Dokumen PDF
+            doc.setFontSize(14);
+            doc.text(`LAPORAN TAGIHAN IURAN SAMPAH`, 14, 15);
+            doc.setFontSize(10);
+            doc.text(`Perumahan: ${selectedPerumahan} | Periode: ${selectedMonth}`, 14, 22);
 
-                    jsonRows.forEach((row, index) => {
-                        const namaPemilik = row['Nama Warga'];
-                        const namaPerumahan = row['Perumahan'];
-                        const noRumah = row['No. Rumah'];
-                        const noWhatsapp = row['No. WhatsApp'];
-                        const jumlahIuran = parseInt(row['Jumlah Iuran (Rp)']) || 0;
-                        const jatuhTempo = row['Jatuh Tempo'];
-                        const status = row['Status Pembayaran'] || 'Belum Bayar';
+            // Kolom Header PDF
+            const tableHeaders = [["No", "Nama Warga", "Perumahan", "No. Rumah", "No. WhatsApp", "Jumlah Iuran", "Jatuh Tempo", "Status"]];
 
-                        if (namaPemilik && namaPerumahan && jatuhTempo) {
-                            if (!masterPerumahan.includes(namaPerumahan)) {
-                                masterPerumahan.push(namaPerumahan);
-                            }
+            // Baris Data PDF
+            const tableData = filteredBills.map((b, index) => [
+                index + 1,
+                b.namaPemilik,
+                b.namaPerumahan,
+                b.noRumah,
+                b.noWhatsapp,
+                formatRupiah(b.jumlahIuran),
+                formatDate(b.jatuhTempo),
+                b.status
+            ]);
 
-                            bills.push({
-                                id: Date.now() + index,
-                                namaPerumahan: String(namaPerumahan).trim(),
-                                namaPemilik: String(namaPemilik).trim(),
-                                noRumah: String(noRumah || '').trim(),
-                                noWhatsapp: String(noWhatsapp || '').trim(),
-                                jumlahIuran: jumlahIuran,
-                                jatuhTempo: String(jatuhTempo).trim(),
-                                status: String(status).trim()
-                            });
-
-                            addedCount++;
-                        }
-                    });
-
-                    saveMasterPerumahan();
-                    saveData();
-                    renderPerumahanDropdowns();
-                    renderTable();
-
-                    alert(`Berhasil merestore ${addedCount} data dari Excel!`);
-                } catch (err) {
-                    alert("Gagal membaca file Excel. Pastikan format file benar (.xlsx).");
-                    console.error(err);
+            // Pembuatan Tabel dengan Style Grid (Kotak-kotak Seperti Excel)
+            doc.autoTable({
+                head: tableHeaders,
+                body: tableData,
+                startY: 28,
+                theme: 'grid', // 'grid' memberikan garis/kotak-kotak di sekeliling sel
+                styles: {
+                    fontSize: 9,
+                    cellPadding: 3,
+                    lineColor: [180, 180, 180], // Warna garis kotak (abu-abu)
+                    lineWidth: 0.2 // Ketebalan garis kotak
+                },
+                headStyles: {
+                    fillColor: [46, 125, 50], // Warna hijau tema aplikasi
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold',
+                    halign: 'center'
+                },
+                columnStyles: {
+                    0: { halign: 'center', cellWidth: 12 }, // No
+                    1: { cellWidth: 45 },                  // Nama
+                    2: { cellWidth: 40 },                  // Perumahan
+                    3: { halign: 'center', cellWidth: 25 }, // No Rumah
+                    4: { halign: 'center', cellWidth: 35 }, // No WA
+                    5: { halign: 'right', cellWidth: 35 },  // Iuran
+                    6: { halign: 'center', cellWidth: 30 }, // Jatuh Tempo
+                    7: { halign: 'center', cellWidth: 30 }  // Status
                 }
+            });
 
-                event.target.value = '';
-            };
+            const perumahanNameStr = selectedPerumahan === 'Semua' ? 'Semua_Perumahan' : selectedPerumahan.replace(/\s+/g, '_');
+            const fileName = `Laporan_Tagihan_${perumahanNameStr}_${selectedMonth}.pdf`;
 
-            reader.readAsArrayBuffer(file);
+            doc.save(fileName);
         }
 
         // FUNGSI CETAK STRUK THERMAL
@@ -612,7 +616,7 @@
             if (!bill) return;
 
             document.getElementById('rPerumahan').textContent = bill.namaPerumahan;
-            document.getElementById('rNoTrans').textContent = 'TRX-' + String(bill.id).slice(-8); // Mengambil 8 digit terakhir agar tidak terlalu panjang
+            document.getElementById('rNoTrans').textContent = 'TRX-' + String(bill.id).slice(-8);
             document.getElementById('rTglLunas').textContent = formatDate(new Date().toISOString().split('T')[0]);
             document.getElementById('rNama').textContent = bill.namaPemilik;
             document.getElementById('rNoRumah').textContent = bill.noRumah;
