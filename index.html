@@ -104,7 +104,7 @@
         </div>
         <div class="form-group">
           <label>Jumlah Iuran (Rp):</label>
-          <input type="number" id="jumlah_iuran" value="35000">
+          <input type="number" id="jumlah_iuran" placeholder="Contoh: 35000">
         </div>
       </div>
       <button class="btn btn-green" id="btn_simpan" onclick="simpanTagihan()">💾 Simpan ke Database</button>
@@ -159,7 +159,6 @@
   </div>
 
   <script>
-    // CREDENTIAL LENGKAP MILIK ANDA TERKUNCI AMAN DI SINI:
     const SUPABASE_URL = "https://perrqmlciaemfushewmh.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlcnJxbWxjaWFlbWZ1c2hld21oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxOTA4MTksImV4cCI6MjEwMjc2NjgxOX0.VNgPSSbJVX1ib95NJC7ufZxSkBi2ocB17syX4A0BD5A";
     
@@ -194,7 +193,7 @@
       const { error } = await _supabase.from('master_perumahan').insert([{ nama_perumahan: nama }]);
 
       if (error) {
-        alert('Gagal menambah perumahan: ' + error.message + '\n\nPastikan RLS pada tabel master_perumahan di Supabase sudah dimatikan (Disable RLS).');
+        alert('Gagal menambah perumahan: ' + error.message);
       } else {
         alert('Berhasil menambah perumahan!');
         document.getElementById('new_perumahan').value = '';
@@ -221,7 +220,7 @@
       const rumah = document.getElementById('no_rumah').value.trim();
       const iuran = document.getElementById('jumlah_iuran').value;
 
-      if (!perumahan || !warga || !rumah) return alert('Lengkapi semua data!');
+      if (!perumahan || !warga || !rumah || !iuran) return alert('Lengkapi semua data!');
 
       const payload = {
         nama_perumahan: perumahan,
@@ -284,8 +283,17 @@
       });
     }
 
-    // 5. Fungsi Aksi (Bayar, Edit, Cetak Struk)
+    // 5. Fungsi Aksi dengan Proteksi Password untuk Batal Bayar
     async function bayarData(id, statusSekarang) {
+      if (statusSekarang) {
+        const pass = prompt("Masukkan Password untuk Batal Bayar:");
+        if (pass === null) return; // Pengguna menekan tombol Batal
+        if (pass !== "12345") {
+          alert("Password salah! Aksi Batal Bayar dibatalkan.");
+          return;
+        }
+      }
+
       const { error } = await _supabase.from('tagihan').update({ status_bayar: !statusSekarang }).eq('id', id);
       if (error) alert('Gagal memperbarui status: ' + error.message);
       else loadTagihan();
@@ -306,7 +314,7 @@
       document.getElementById('edit_id').value = '';
       document.getElementById('nama_warga').value = '';
       document.getElementById('no_rumah').value = '';
-      document.getElementById('jumlah_iuran').value = '35000';
+      document.getElementById('jumlah_iuran').value = '';
       document.getElementById('btn_simpan').innerText = '💾 Simpan ke Database';
       document.getElementById('btn_batal').style.display = 'none';
     }
