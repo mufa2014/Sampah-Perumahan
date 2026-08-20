@@ -143,11 +143,12 @@
         </select>
       </div>
 
-      <!-- 5. ISI DATA (TABEL) -->
+      <!-- 5. ISI DATA (TABEL DENGAN KOLOM NOMOR URUT) -->
       <div style="overflow-x: auto;">
         <table>
           <thead>
             <tr>
+              <th style="width: 40px; text-align: center;">No</th>
               <th>Nama</th>
               <th>Perumahan</th>
               <th>No. Rumah</th>
@@ -160,7 +161,7 @@
             </tr>
           </thead>
           <tbody id="table_data">
-            <tr><td colspan="9" style="text-align: center;">Memuat data...</td></tr>
+            <tr><td colspan="10" style="text-align: center;">Memuat data...</td></tr>
           </tbody>
         </table>
       </div>
@@ -466,25 +467,26 @@
       const bulan = Number(document.getElementById('filter_bulan').value);
       const tahun = Number(document.getElementById('filter_tahun').value);
 
+      // MENGURUTKAN BERDASARKAN JATUH TEMPO (Paling muda di posisi paling bawah)
       const { data, error } = await _supabase
         .from('tagihan')
         .select('*')
         .eq('bulan', bulan)
         .eq('tahun', tahun)
-        .order('id', { ascending: false });
+        .order('jatuh_tempo', { ascending: false });
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="9" style="color:red; text-align:center;">Error: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" style="color:red; text-align:center;">Error: ${error.message}</td></tr>`;
         return;
       }
 
       if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">Belum ada data tagihan untuk periode ini.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;">Belum ada data tagihan untuk periode ini.</td></tr>`;
         return;
       }
 
       tbody.innerHTML = '';
-      data.forEach(row => {
+      data.forEach((row, index) => {
         const isLunas = row.status_bayar === true || row.status_bayar === 'true';
         
         const tglJatuhTempo = row.jatuh_tempo ? new Date(row.jatuh_tempo).toLocaleDateString('id-ID') : '-';
@@ -497,6 +499,7 @@
 
         tbody.innerHTML += `
           <tr>
+            <td style="text-align: center; font-weight: bold; color: #555;">${index + 1}</td>
             <td><b>${row.nama_warga}</b></td>
             <td>${row.nama_perumahan}</td>
             <td>${row.no_rumah}</td>
@@ -540,7 +543,7 @@
         query = query.eq('status_bayar', false);
       }
 
-      const { data, error } = await query.order('nama_perumahan', { ascending: true });
+      const { data, error } = await query.order('jatuh_tempo', { ascending: false });
 
       if (error) return alert('Gagal mengambil data export: ' + error.message);
       if (!data || data.length === 0) return alert('Tidak ada data yang sesuai filter!');
