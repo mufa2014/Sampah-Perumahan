@@ -8,7 +8,7 @@
   <style>
     * { box-sizing: border-box; }
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
-    .container { max-width: 980px; margin: 0 auto; }
+    .container { max-width: 1000px; margin: 0 auto; }
     .header { background: #2e7d32; color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
     .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; background: #e0e0e0; color: #333; }
     .status-online { background: #d4edda; color: #155724; }
@@ -22,7 +22,7 @@
     .form-group label { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #555; }
     input, select { padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
     
-    .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; color: #fff; font-weight: bold; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+    .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; color: #fff; font-weight: bold; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
     .btn-green { background: #28a745; }
     .btn-green:hover { background: #218838; }
     .btn-blue { background: #007bff; }
@@ -30,10 +30,14 @@
     .btn-red { background: #dc3545; }
     .btn-gray { background: #6c757d; }
     
+    /* Style Tombol Aksi Ukuran Kecil & 1 Baris */
+    .btn-action { padding: 5px 8px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .action-container { display: flex; flex-direction: row; flex-wrap: nowrap; gap: 4px; align-items: center; justify-content: flex-start; }
+
     table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
     th, td { border: 1px solid #e0e0e0; padding: 8px; text-align: left; }
     th { background: #f8f9fa; color: #333; }
-    .badge-bayar { padding: 3px 6px; border-radius: 3px; font-size: 11px; font-weight: bold; }
+    .badge-bayar { padding: 3px 6px; border-radius: 3px; font-size: 11px; font-weight: bold; display: inline-block; }
     .badge-lunas { background: #d4edda; color: #155724; }
     .badge-pending { background: #fff3cd; color: #856404; }
 
@@ -131,12 +135,13 @@
               <th>No. Rumah</th>
               <th>Iuran</th>
               <th>Jatuh Tempo</th>
-              <th>Status / Tgl Bayar</th>
+              <th>Status</th>
+              <th>Tgl Bayar</th>
               <th>Aksi</th>
             </tr>
           </thead>
           <tbody id="table_data">
-            <tr><td colspan="7" style="text-align: center;">Memuat data...</td></tr>
+            <tr><td colspan="8" style="text-align: center;">Memuat data...</td></tr>
           </tbody>
         </table>
       </div>
@@ -267,12 +272,12 @@
       const { data, error } = await _supabase.from('tagihan').select('*').order('id', { ascending: false });
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="7" style="color:red; text-align:center;">Error: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="color:red; text-align:center;">Error: ${error.message}</td></tr>`;
         return;
       }
 
       if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Belum ada data tagihan.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Belum ada data tagihan.</td></tr>`;
         return;
       }
 
@@ -295,12 +300,14 @@
               <span class="badge-bayar ${isLunas ? 'badge-lunas' : 'badge-pending'}">
                 ${isLunas ? 'LUNAS' : 'BELUM BAYAR'}
               </span>
-              <br><small style="color: #666;">${isLunas ? 'Bayar: ' + tglBayar : ''}</small>
             </td>
+            <td>${isLunas ? tglBayar : '-'}</td>
             <td>
-              <button class="btn btn-blue" onclick="cetakStruk('${row.nama_warga}', '${row.nama_perumahan}', '${row.no_rumah}', ${row.iuran}, '${tglJatuhTempo}', ${isLunas}, '${tglBayar}')">🧾 Struk</button>
-              <button class="btn btn-orange" onclick="editData('${row.id}', '${row.nama_perumahan}', '${row.nama_warga}', '${row.no_rumah}', ${row.iuran}, '${row.jatuh_tempo || ''}', '${row.tanggal_bayar || ''}')">✏️ Edit</button>
-              <button class="btn btn-green" onclick="bayarData('${row.id}', ${isLunas})">💳 ${isLunas ? 'Batal Bayar' : 'Bayar'}</button>
+              <div class="action-container">
+                <button class="btn btn-blue btn-action" onclick="cetakStruk('${row.nama_warga}', '${row.nama_perumahan}', '${row.no_rumah}', ${row.iuran}, '${tglJatuhTempo}', ${isLunas}, '${tglBayar}')">🧾 Struk</button>
+                <button class="btn btn-orange btn-action" onclick="editData('${row.id}', '${row.nama_perumahan}', '${row.nama_warga}', '${row.no_rumah}', ${row.iuran}, '${row.jatuh_tempo || ''}', '${row.tanggal_bayar || ''}')">✏️ Edit</button>
+                <button class="btn btn-green btn-action" onclick="bayarData('${row.id}', ${isLunas})">💳 ${isLunas ? 'Batal' : 'Bayar'}</button>
+              </div>
             </td>
           </tr>`;
       });
