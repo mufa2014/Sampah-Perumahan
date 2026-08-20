@@ -35,9 +35,10 @@
     .form-group label { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #555; }
     input, select { padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
     
-    /* Filter Bar khusus Periode Bulan & Tahun */
+    /* Filter Bar khusus Periode, Perumahan, & Status */
     .filter-bar { display: flex; align-items: center; background: #e8f5e9; padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; gap: 10px; flex-wrap: wrap; }
-    .filter-bar label { font-weight: bold; font-size: 13px; color: #2e7d32; }
+    .filter-bar label { font-weight: bold; font-size: 13px; color: #2e7d32; margin-left: 5px; }
+    .filter-bar label:first-child { margin-left: 0; }
 
     /* Button Styles */
     .btn { padding: 8px 14px; border: none; border-radius: 5px; cursor: pointer; color: #fff; font-weight: bold; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
@@ -119,7 +120,7 @@
     <div class="card">
       <h3>Daftar Tagihan Sampah Warga</h3>
       
-      <!-- 4. FILTER BULAN DAN TAHUN -->
+      <!-- 4. FILTER BULAN, TAHUN, PERUMAHAN, & STATUS -->
       <div class="filter-bar">
         <label>🔍 Periode:</label>
         <select id="filter_bulan" onchange="loadTagihan()">
@@ -141,9 +142,21 @@
           <option value="2026">2026</option>
           <option value="2027">2027</option>
         </select>
+
+        <label>🏡 Perumahan:</label>
+        <select id="filter_perumahan" onchange="loadTagihan()">
+          <option value="ALL">-- Semua Perumahan --</option>
+        </select>
+
+        <label>📌 Status:</label>
+        <select id="filter_status" onchange="loadTagihan()">
+          <option value="ALL">-- Semua Status --</option>
+          <option value="LUNAS">Lunas</option>
+          <option value="BELUM">Belum Bayar</option>
+        </select>
       </div>
 
-      <!-- 5. ISI DATA (TABEL DENGAN KOLOM NOMOR URUT) -->
+      <!-- 5. ISI DATA -->
       <div style="overflow-x: auto;">
         <table>
           <thead>
@@ -400,17 +413,20 @@
     async function loadPerumahan() {
       const selectForm = document.getElementById('select_perumahan');
       const selectExport = document.getElementById('export_perumahan');
+      const selectFilter = document.getElementById('filter_perumahan');
       const tagsContainer = document.getElementById('perumahan_tags');
       
       const { data } = await _supabase.from('master_perumahan').select('*').order('nama_perumahan', { ascending: true });
       
       selectForm.innerHTML = '<option value="">-- Pilih Perumahan --</option>';
       selectExport.innerHTML = '<option value="ALL">-- Semua Perumahan --</option>';
+      selectFilter.innerHTML = '<option value="ALL">-- Semua Perumahan --</option>';
       tagsContainer.innerHTML = '';
 
       data?.forEach(p => {
         selectForm.innerHTML += `<option value="${p.nama_perumahan}">${p.nama_perumahan}</option>`;
         selectExport.innerHTML += `<option value="${p.nama_perumahan}">${p.nama_perumahan}</option>`;
+        selectFilter.innerHTML += `<option value="${p.nama_perumahan}">${p.nama_perumahan}</option>`;
         tagsContainer.innerHTML += `
           <div class="perum-item">
             <span>${p.nama_perumahan}</span>
@@ -466,14 +482,30 @@
       const tbody = document.getElementById('table_data');
       const bulan = Number(document.getElementById('filter_bulan').value);
       const tahun = Number(document.getElementById('filter_tahun').value);
+      const filterPerum = document.getElementById('filter_perumahan').value;
+      const filterStat = document.getElementById('filter_status').value;
 
-      // MENGURUTKAN BERDASARKAN JATUH TEMPO (Paling muda di posisi paling bawah)
-      const { data, error } = await _supabase
+      // QUERY UTAMA
+      let query = _supabase
         .from('tagihan')
         .select('*')
         .eq('bulan', bulan)
-        .eq('tahun', tahun)
-        .order('jatuh_tempo', { ascending: false });
+        .eq('tahun', tahun);
+
+      // FILTER NAMA PERUMAHAN
+      if (filterPerum !== 'ALL') {
+        query = query.eq('nama_perumahan', filterPerum);
+      }
+
+      // FILTER STATUS PEMBAYARAN
+      if (filterStat === 'LUNAS') {
+        query = query.eq('status_bayar', true);
+      } else if (filterStat === 'BELUM') {
+        query = query.eq('status_bayar', false);
+      }
+
+      // DIURUTKAN BERDASARKAN JATUH TEMPO (Paling muda di posisi paling bawah)
+      const { data, error } = await query.order('jatuh_tempo', { ascending: false });
 
       if (error) {
         tbody.innerHTML = `<tr><td colspan="10" style="color:red; text-align:center;">Error: ${error.message}</td></tr>`;
@@ -481,7 +513,7 @@
       }
 
       if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;">Belum ada data tagihan untuk periode ini.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;">Belum ada data tagihan untuk filter ini.</td></tr>`;
         return;
       }
 
