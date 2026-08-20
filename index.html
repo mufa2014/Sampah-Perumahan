@@ -159,11 +159,9 @@
   </div>
 
   <script>
-    // URL ANDA SUDAH TERSIMPAN DI SINI:
+    // CREDENTIAL LENGKAP MILIK ANDA TERKUNCI AMAN DI SINI:
     const SUPABASE_URL = "https://perrqmlciaemfushewmh.supabase.co";
-    
-    // TEMPELKAN KUNCI (ANON KEY) ANDA DI BAWAH INI:
-    const SUPABASE_KEY = "PASTE_KEY_ANON_SUPABASE_ANDA_DI_SINI";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlcnJxbWxjaWFlbWZ1c2hld21oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxOTA4MTksImV4cCI6MjEwMjc2NjgxOX0.VNgPSSbJVX1ib95NJC7ufZxSkBi2ocB17syX4A0BD5A";
     
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -196,7 +194,7 @@
       const { error } = await _supabase.from('master_perumahan').insert([{ nama_perumahan: nama }]);
 
       if (error) {
-        alert('Gagal menambah perumahan: ' + error.message + '\n\nPastikan RLS pada tabel master_perumahan sudah dimatikan atau diatur policy-nya.');
+        alert('Gagal menambah perumahan: ' + error.message + '\n\nPastikan RLS pada tabel master_perumahan di Supabase sudah dimatikan (Disable RLS).');
       } else {
         alert('Berhasil menambah perumahan!');
         document.getElementById('new_perumahan').value = '';
