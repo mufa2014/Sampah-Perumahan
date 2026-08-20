@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Tagihan Sampah Multi-Perumahan</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        :root { --primary: #2e7d32; --bg: #f4f6f8; --card-bg: #ffffff; --border: #e0e0e0; --danger: #d32f2f; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: var(--bg); padding: 15px; }
+        .container { max-width: 1000px; margin: auto; }
+        header { background: var(--primary); color: white; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px; }
+        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .btn { background: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid var(--border); padding: 8px; text-align: left; font-size: 0.9rem; }
+        th { background: #f0f0f0; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Sistem Tagihan Sampah Online</h1>
+            <p>Terhubung dengan Cloud Database Supabase</p>
+        </header>
+
+        <div class="card">
+            <h3>Status Server Supabase: <span id="dbStatus" style="color: orange;">Menghubungkan...</span></h3>
+        </div>
+
+        <div class="card">
+            <button class="btn" onclick="loadData()">🔄 Refresh Data dari Supabase</button>
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>Nama Warga</th>
+                        <th>Perumahan</th>
+                        <th>No. Rumah</th>
+                        <th>Iuran</th>
+                        <th>Jatuh Tempo</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // MASUKKAN CREDENTIAL SUPABASE ANDA DI SINI
+        const SUPABASE_URL = "https://URL_PROYEK_ANDA.supabase.co";
+        const SUPABASE_KEY = "KEY_ANON_PUBLIC_ANDA";
+        
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function checkConnection() {
+            const { data, error } = await supabase.from('bills').select('id').limit(1);
+            if (error) {
+                document.getElementById('dbStatus').textContent = "Gagal Terhubung (" + error.message + ")";
+                document.getElementById('dbStatus').style.color = "red";
+            } else {
+                document.getElementById('dbStatus').textContent = "Terhubung (Online)";
+                document.getElementById('dbStatus').style.color = "green";
+                loadData();
+            }
+        }
+
+        async function loadData() {
+            const { data, error } = await supabase.from('bills').select('*').order('created_at', { ascending: false });
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            if (error) {
+                alert("Gagal mengambil data: " + error.message);
+                return;
+            }
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Belum ada data di database.</td></tr>';
+                return;
+            }
+
+            data.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.nama_pemilik}</td>
+                    <td>${item.nama_perumahan}</td>
+                    <td>${item.no_rumah}</td>
+                    <td>Rp ${parseInt(item.jumlah_iuran).toLocaleString('id-ID')}</td>
+                    <td>${item.jatuh_tempo}</td>
+                    <td><strong>${item.status}</strong></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', checkConnection);
+    </script>
+</body>
+</html>
