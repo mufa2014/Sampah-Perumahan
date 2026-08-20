@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Aplikasi Tagihan Sampah Multi-Perumahan</title>
 
-    <!-- Pustaka SheetJS untuk Export Excel (.xlsx) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <style>
@@ -97,8 +96,13 @@
         .btn-edit { background-color: #fff3e0; color: var(--warning); }
         .btn-delete { background-color: #ffebee; color: var(--danger); }
         .btn-secondary { background-color: #ffffff; border: 1px solid var(--border); color: #333; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600; flex: 1; text-align: center; }
+        
         .btn-export { background-color: #157347; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold; flex: 1; text-align: center; }
         .btn-export:hover { background-color: #115c38; }
+
+        .btn-restore { background-color: #0d6efd; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold; flex: 1; text-align: center; }
+        .btn-restore:hover { background-color: #0b5ed7; }
+
         .btn-primary-toggle { background-color: var(--primary); color: white; border: none; padding: 10px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: bold; width: 100%; }
 
         /* Desktop Table Default */
@@ -109,7 +113,7 @@
         .badge-pending { background-color: #ffebee; color: var(--danger); }
         .badge-paid { background-color: #e8f5e9; color: var(--success); }
 
-        /* Mobile View Response (Transform Table to Cards on Mobile Screen) */
+        /* Mobile View Response */
         @media screen and (max-width: 768px) {
             .card-header-flex { flex-direction: column; align-items: stretch; }
             
@@ -160,7 +164,7 @@
             }
         }
 
-        /* Modal Pop-Up Melayang */
+        /* Modal Pop-Up */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -255,7 +259,11 @@
                         <label for="filterBulan">Periode:</label>
                         <input type="month" id="filterBulan" onchange="renderTable()">
                     </div>
-                    <button type="button" class="btn-export" onclick="exportToExcel()">📊 Backup Excel</button>
+                    <div style="display: flex; gap: 6px; width: 100%;">
+                        <button type="button" class="btn-export" onclick="exportToExcel()">📊 Backup Excel</button>
+                        <button type="button" class="btn-restore" onclick="document.getElementById('restoreFileInput').click()">📥 Restore Excel</button>
+                        <input type="file" id="restoreFileInput" accept=".xlsx, .xls" style="display: none;" onchange="restoreFromExcel(event)">
+                    </div>
                 </div>
             </div>
 
@@ -277,7 +285,6 @@
         </div>
     </div>
 
-    <!-- Modal Form Melayang -->
     <div class="modal-overlay" id="modalFormOverlay">
         <div class="modal-card">
             <div class="modal-header">
@@ -323,7 +330,6 @@
         </div>
     </div>
 
-    <!-- Template Struk Cetak -->
     <div id="receiptArea">
         <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px;">
             <h3 style="font-size: 1rem;">BUKTI PEMBAYARAN IURAN</h3>
@@ -369,7 +375,7 @@
             if (e.target === document.getElementById('modalFormOverlay')) closeModal();
         }
 
-        // FUNGSI EKSPOR KE EXCEL (.XLSX)
+        // 1. FUNGSI EKSPOR KE EXCEL (TANPA ID TRANSAKSI)
         function exportToExcel() {
             const selectedMonth = document.getElementById('filterBulan').value;
             const selectedPerumahan = document.getElementById('filterPerumahan').value;
@@ -385,22 +391,37 @@
                 return;
             }
 
+            // ID Transaksi Dihapus
             const excelData = filteredBills.map(b => ({
-                'ID Transaksi': b.id,
                 'Nama Warga': b.namaPemilik,
                 'Perumahan': b.namaPerumahan,
-                'No. Rumah': b.noRumah,
-                'No. WhatsApp': b.noWhatsapp,
+                'No. Rumah': String(b.noRumah),
+                'No. WhatsApp': String(b.noWhatsapp),
                 'Jumlah Iuran (Rp)': b.jumlahIuran,
                 'Jatuh Tempo': b.jatuhTempo,
                 'Status Pembayaran': b.status
             }));
 
             const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+            // Format No. WA sebagai teks
+            for (let cell in worksheet) {
+                if (cell.startsWith('D')) {
+                    if (worksheet[cell] && worksheet[cell].v) {
+                        worksheet[cell].t = 's';
+                        worksheet[cell].z = '@';
+                    }
+                }
+            }
+
             worksheet['!cols'] = [
-                { wch: 15 }, { wch: 22 }, { wch: 20 },
-                { wch: 12 }, { wch: 16 }, { wch: 18 },
-                { wch: 14 }, { wch: 18 }
+                { wch: 22 }, // Nama Warga
+                { wch: 20 }, // Perumahan
+                { wch: 12 }, // No. Rumah
+                { wch: 16 }, // No. WhatsApp
+                { wch: 18 }, // Jumlah Iuran
+                { wch: 14 }, // Jatuh Tempo
+                { wch: 18 }  // Status
             ];
 
             const workbook = XLSX.utils.book_new();
@@ -412,7 +433,84 @@
             XLSX.writeFile(workbook, fileName);
         }
 
-        // FUNGSI CETAK STRUK (KOMPATIBEL MEDIAN & BROWSER)
+        // 2. FUNGSI RESTORE DATA DARI FILE EXCEL
+        function restoreFromExcel(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    
+                    // Baca sheet menjadi JSON
+                    const jsonRows = XLSX.utils.sheet_to_json(worksheet, { raw: false });
+
+                    if (jsonRows.length === 0) {
+                        alert("File Excel kosong atau format tidak sesuai.");
+                        return;
+                    }
+
+                    if (!confirm(`Ditemukan ${jsonRows.length} data tagihan dari file Excel.\n\nApakah Anda yakin ingin memuat/menambahkan data ini ke sistem?`)) {
+                        event.target.value = '';
+                        return;
+                    }
+
+                    let addedCount = 0;
+
+                    jsonRows.forEach((row, index) => {
+                        const namaPemilik = row['Nama Warga'];
+                        const namaPerumahan = row['Perumahan'];
+                        const noRumah = row['No. Rumah'];
+                        const noWhatsapp = row['No. WhatsApp'];
+                        const jumlahIuran = parseInt(row['Jumlah Iuran (Rp)']) || 0;
+                        const jatuhTempo = row['Jatuh Tempo'];
+                        const status = row['Status Pembayaran'] || 'Belum Bayar';
+
+                        if (namaPemilik && namaPerumahan && jatuhTempo) {
+                            // Tambah ke daftar master perumahan jika belum ada
+                            if (!masterPerumahan.includes(namaPerumahan)) {
+                                masterPerumahan.push(namaPerumahan);
+                            }
+
+                            // Generate ID unik otomatis
+                            bills.push({
+                                id: Date.now() + index,
+                                namaPerumahan: String(namaPerumahan).trim(),
+                                namaPemilik: String(namaPemilik).trim(),
+                                noRumah: String(noRumah || '').trim(),
+                                noWhatsapp: String(noWhatsapp || '').trim(),
+                                jumlahIuran: jumlahIuran,
+                                jatuhTempo: String(jatuhTempo).trim(),
+                                status: String(status).trim()
+                            });
+
+                            addedCount++;
+                        }
+                    });
+
+                    saveMasterPerumahan();
+                    saveData();
+                    renderPerumahanDropdowns();
+                    renderTable();
+
+                    alert(`Berhasil merestore ${addedCount} data dari Excel!`);
+                } catch (err) {
+                    alert("Gagal membaca file Excel. Pastikan format file benar (.xlsx).");
+                    console.error(err);
+                }
+
+                // Reset input file agar bisa pilih file yang sama jika diperlukan
+                event.target.value = '';
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        // FUNGSI CETAK STRUK
         function printReceipt(id) {
             const bill = bills.find(b => b.id === id);
             if (!bill) return;
@@ -432,7 +530,7 @@
             }
         }
 
-        // FUNGSI INGATKAN WA (DEEP LINK LANGSUNG KE WHATSAPP)
+        // FUNGSI INGATKAN WA
         function shareReminder(id) {
             const bill = bills.find(b => b.id === id);
             if (!bill) return;
