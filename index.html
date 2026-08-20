@@ -6,6 +6,12 @@
   <title>Sistem Tagihan Sampah Online</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- Library Export Excel (SheetJS) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- Library Export PDF (jsPDF & AutoTable) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  
   <style>
     * { box-sizing: border-box; }
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
@@ -34,6 +40,8 @@
     .btn-orange { background: #fd7e14; }
     .btn-red { background: #dc3545; }
     .btn-gray { background: #6c757d; }
+    .btn-purple { background: #6f42c1; }
+    .btn-purple:hover { background: #5a32a3; }
     
     .btn-action { padding: 5px 8px; font-size: 11px; font-weight: 600; white-space: nowrap; }
     .action-container { display: flex; flex-direction: row; flex-wrap: nowrap; gap: 4px; align-items: center; justify-content: flex-start; }
@@ -101,7 +109,7 @@
       <div class="perum-list" id="perumahan_tags"></div>
     </div>
 
-    <!-- 2. Tabel Data Tagihan dengan Filter & Tombol Tambah Warga -->
+    <!-- 2. Tabel Data Tagihan dengan Filter & Tombol Aksi -->
     <div class="card">
       <h3>Daftar Tagihan Sampah Warga</h3>
       
@@ -129,8 +137,12 @@
           </select>
         </div>
 
-        <!-- Tombol Buka Modal Form Warga -->
-        <button class="btn btn-green" onclick="openModalFormWarga()">➕ Tambah Tagihan Warga</button>
+        <div style="display: flex; gap: 8px;">
+          <!-- Tombol Export Data -->
+          <button class="btn btn-purple" onclick="openModalExport()">📊 Rekap & Export Data</button>
+          <!-- Tombol Buka Modal Form Warga -->
+          <button class="btn btn-green" onclick="openModalFormWarga()">➕ Tambah Tagihan Warga</button>
+        </div>
       </div>
 
       <div style="overflow-x: auto;">
@@ -192,6 +204,36 @@
       <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 15px;">
         <button class="btn btn-green" id="btn_simpan" onclick="simpanTagihan()">💾 Simpan Ke Database</button>
         <button class="btn btn-red" onclick="closeModalFormWarga()">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EXPORT & REKAP DATA -->
+  <div id="modalExport" class="modal">
+    <div class="modal-content">
+      <h3 style="margin-top:0; color:#6f42c1; text-align: left; border-bottom: 2px solid #e8f5e9; padding-bottom: 8px;">Rekap & Export Laporan</h3>
+      
+      <div class="form-grid" style="grid-template-columns: 1fr;">
+        <div class="form-group">
+          <label>Filter Perumahan:</label>
+          <select id="export_perumahan">
+            <option value="ALL">-- Semua Perumahan --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Filter Status Pembayaran:</label>
+          <select id="export_status">
+            <option value="ALL">-- Semua Status (Lunas & Belum Lunas) --</option>
+            <option value="LUNAS">Lunas Saja</option>
+            <option value="BELUM">Belum Bayar Saja</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap;">
+        <button class="btn btn-green" onclick="prosesExport('excel')">📥 Export Excel (.xlsx)</button>
+        <button class="btn btn-red" onclick="prosesExport('pdf')">📄 Export PDF (.pdf)</button>
+        <button class="btn btn-gray" onclick="closeModalExport()">Batal</button>
       </div>
     </div>
   </div>
@@ -279,6 +321,15 @@
       resetForm();
     }
 
+    /* Modal Export Control */
+    function openModalExport() {
+      document.getElementById('modalExport').style.display = 'flex';
+    }
+
+    function closeModalExport() {
+      document.getElementById('modalExport').style.display = 'none';
+    }
+
     /* Kelola Master Perumahan */
     async function savePerumahan() {
       const editId = document.getElementById('edit_perumahan_id').value;
@@ -322,16 +373,19 @@
     }
 
     async function loadPerumahan() {
-      const select = document.getElementById('select_perumahan');
+      const selectForm = document.getElementById('select_perumahan');
+      const selectExport = document.getElementById('export_perumahan');
       const tagsContainer = document.getElementById('perumahan_tags');
       
       const { data } = await _supabase.from('master_perumahan').select('*').order('nama_perumahan', { ascending: true });
       
-      select.innerHTML = '<option value="">-- Pilih Perumahan --</option>';
+      selectForm.innerHTML = '<option value="">-- Pilih Perumahan --</option>';
+      selectExport.innerHTML = '<option value="ALL">-- Semua Perumahan --</option>';
       tagsContainer.innerHTML = '';
 
       data?.forEach(p => {
-        select.innerHTML += `<option value="${p.nama_perumahan}">${p.nama_perumahan}</option>`;
+        selectForm.innerHTML += `<option value="${p.nama_perumahan}">${p.nama_perumahan}</option>`;
+        selectExport.innerHTML += `<option value="${p.nama_perumahan}">${p.nama_perumahan}</option>`;
         tagsContainer.innerHTML += `
           <div class="perum-item">
             <span>${p.nama_perumahan}</span>
@@ -440,6 +494,111 @@
             </td>
           </tr>`;
       });
+    }
+
+    /* FITUR EXPORT EXCEL DAN PDF */
+    async function prosesExport(format) {
+      const bulanVal = document.getElementById('filter_bulan').value;
+      const bulanText = document.getElementById('filter_bulan').options[document.getElementById('filter_bulan').selectedIndex].text;
+      const tahunVal = document.getElementById('filter_tahun').value;
+      const perumahanVal = document.getElementById('export_perumahan').value;
+      const statusVal = document.getElementById('export_status').value;
+
+      // Query data dari Supabase
+      let query = _supabase.from('tagihan').select('*').eq('bulan', Number(bulanVal)).eq('tahun', Number(tahunVal));
+      
+      if (perumahanVal !== 'ALL') {
+        query = query.eq('nama_perumahan', perumahanVal);
+      }
+      
+      if (statusVal === 'LUNAS') {
+        query = query.eq('status_bayar', true);
+      } else if (statusVal === 'BELUM') {
+        query = query.eq('status_bayar', false);
+      }
+
+      const { data, error } = await query.order('nama_perumahan', { ascending: true });
+
+      if (error) return alert('Gagal mengambil data export: ' + error.message);
+      if (!data || data.length === 0) return alert('Tidak ada data yang sesuai filter!');
+
+      if (format === 'excel') {
+        exportToExcel(data, bulanText, tahunVal, perumahanVal, statusVal);
+      } else if (format === 'pdf') {
+        exportToPDF(data, bulanText, tahunVal, perumahanVal, statusVal);
+      }
+    }
+
+    function exportToExcel(data, bulanText, tahunVal, perumahanVal, statusVal) {
+      const rows = data.map((d, index) => ({
+        "No": index + 1,
+        "Nama Warga": d.nama_warga,
+        "Perumahan": d.nama_perumahan,
+        "No. Rumah": d.no_rumah,
+        "No. HP": d.no_hp || '-',
+        "Jumlah Iuran (Rp)": d.iuran,
+        "Jatuh Tempo": d.jatuh_tempo ? new Date(d.jatuh_tempo).toLocaleDateString('id-ID') : '-',
+        "Status Pembayaran": (d.status_bayar === true || d.status_bayar === 'true') ? 'LUNAS' : 'BELUM BAYAR',
+        "Tanggal Bayar": d.tanggal_bayar ? new Date(d.tanggal_bayar).toLocaleDateString('id-ID') : '-'
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Tagihan");
+
+      const filename = `Laporan_Tagihan_${perumahanVal.replace(/ /g, '_')}_${bulanText}_${tahunVal}.xlsx`;
+      XLSX.writeFile(workbook, filename);
+      closeModalExport();
+    }
+
+    function exportToPDF(data, bulanText, tahunVal, perumahanVal, statusVal) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('landscape'); // Menggunakan orientasi landscape agar tabel muat dengan baik
+
+      // Judul Laporan
+      doc.setFontSize(14);
+      doc.text("LAPORAN RETRIBUSI TAGIHAN SAMPAH WARGA", 14, 15);
+      doc.setFontSize(10);
+      doc.text(`Periode: ${bulanText} ${tahunVal} | Perumahan: ${perumahanVal} | Status: ${statusVal}`, 14, 22);
+
+      // Data Kolom
+      const tableColumn = ["No", "Nama Warga", "Perumahan", "No. Rumah", "No. HP", "Iuran (Rp)", "Jatuh Tempo", "Status", "Tgl Bayar"];
+      const tableRows = [];
+
+      data.forEach((d, index) => {
+        const isLunas = (d.status_bayar === true || d.status_bayar === 'true');
+        const rowData = [
+          index + 1,
+          d.nama_warga,
+          d.nama_perumahan,
+          d.no_rumah,
+          d.no_hp || '-',
+          "Rp " + Number(d.iuran).toLocaleString('id-ID'),
+          d.jatuh_tempo ? new Date(d.jatuh_tempo).toLocaleDateString('id-ID') : '-',
+          isLunas ? 'LUNAS' : 'BELUM BAYAR',
+          d.tanggal_bayar ? new Date(d.tanggal_bayar).toLocaleDateString('id-ID') : '-'
+        ];
+        tableRows.push(rowData);
+      });
+
+      // Menggambar Tabel
+      doc.autoTable({
+        head: [tableColumn],
+        body: tableRows,
+        startY: 28,
+        theme: 'grid',
+        headStyles: { fillColor: [46, 125, 50], textColor: [255, 255, 255], fontStyle: 'bold' },
+        styles: { fontSize: 8, cellPadding: 3 },
+        columnStyles: {
+          0: { cellWidth: 10 },
+          5: { halign: 'right' },
+          7: { halign: 'center' }
+        }
+      });
+
+      const filename = `Laporan_Tagihan_${perumahanVal.replace(/ /g, '_')}_${bulanText}_${tahunVal}.pdf`;
+      doc.save(filename);
+      closeModalExport();
     }
 
     async function bayarData(id, statusSekarang) {
