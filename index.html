@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Tagihan Sampah Online</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Library untuk Konversi Struk ke Gambar PNG -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
+    .container { max-width: 1050px; margin: 0 auto; }
+    .header { background: #2e7d32; color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+    .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; background: #e0e0e0; color: #333; }
+    .status-online { background: #d4edda; color: #155724; }
+    .status-offline { background: #f8d7da; color: #721c24; }
+    
+    .card { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .card h3 { margin-top: 0; color: #2e7d32; font-size: 16px; border-bottom: 2px solid #e8f5e9; padding-bottom: 8px; }
+    
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 10px; }
+    .form-group { display: flex; flex-direction: column; }
+    .form-group label { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #555; }
+    input, select { padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+    
+    .filter-bar { display: flex; align-items: center; gap: 10px; background: #e8f5e9; padding: 12px 15px; border-radius: 6px; margin-bottom: 15px; flex-wrap: wrap; }
+    .filter-bar label { font-weight: bold; font-size: 13px; color: #2e7d32; }
+
+    .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; color: #fff; font-weight: bold; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+    .btn-green { background: #28a745; }
+    .btn-green:hover { background: #218838; }
+    .btn-blue { background: #007bff; }
+    .btn-orange { background: #fd7e14; }
+    .btn-red { background: #dc3545; }
+    .btn-gray { background: #6c757d; }
+    
+    /* Style Tombol Aksi Ukuran Kecil & 1 Baris */
+    .btn-action { padding: 5px 8px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .action-container { display: flex; flex-direction: row; flex-wrap: nowrap; gap: 4px; align-items: center; justify-content: flex-start; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+    th, td { border: 1px solid #e0e0e0; padding: 8px; text-align: left; }
+    th { background: #f8f9fa; color: #333; }
+    .badge-bayar { padding: 3px 6px; border-radius: 3px; font-size: 11px; font-weight: bold; display: inline-block; }
+    .badge-lunas { background: #d4edda; color: #155724; }
+    .badge-pending { background: #fff3cd; color: #856404; }
+
+    /* Modal Styling */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+    .modal-content { background: #fff; padding: 20px; border-radius: 8px; width: 340px; text-align: center; }
+
+    /* Layout Struk 58mm Thermal */
+    #receipt-area {
+      width: 58mm;
+      padding: 6mm 4mm;
+      background: #fff;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 10px;
+      line-height: 1.2;
+      border: 1px dashed #ccc;
+      margin: 0 auto 15px auto;
+      text-align: left;
+      color: #000;
+    }
+    #receipt-area h4 { text-align: center; margin: 0 0 5px 0; font-size: 12px; text-transform: uppercase; }
+    #receipt-area p { margin: 2px 0; }
+    .dashed-line { border-bottom: 1px dashed #000; margin: 6px 0; }
+
+    /* CSS Khusus Print Thermal */
+    @media print {
+      body * { visibility: hidden; }
+      #modalStruk, #modalStruk * { visibility: visible; }
+      #receipt-area, #receipt-area * { visibility: visible; }
+      #receipt-area { position: absolute; left: 0; top: 0; width: 58mm; border: none; padding: 0; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <h2 style="margin: 0 0 5px 0;">Sistem Tagihan Sampah Online</h2>
+      <div id="status_server" class="status-badge status-offline">Memeriksa Koneksi...</div>
+    </div>
+
+    <!-- 1. Form Master Perumahan -->
+    <div class="card">
+      <h3>Tambah Master Perumahan</h3>
+      <div style="display: flex; gap: 10px;">
+        <input type="text" id="new_perumahan" placeholder="Contoh: Paradise Residence 4" style="flex: 1;">
+        <button class="btn btn-blue" onclick="addPerumahan()">+ Tambah Perumahan</button>
+      </div>
+    </div>
+
+    <!-- 2. Form Input Tagihan Warga -->
+    <div class="card">
+      <h3>Tambah Tagihan Warga Baru</h3>
+      <input type="hidden" id="edit_id">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nama Perumahan / Perum:</label>
+          <select id="select_perumahan"><option value="">Loading...</option></select>
+        </div>
+        <div class="form-group">
+          <label>Nama Warga / Pemilik:</label>
+          <input type="text" id="nama_warga" placeholder="Contoh: Budi Santoso">
+        </div>
+        <div class="form-group">
+          <label>No. Rumah / Blok:</label>
+          <input type="text" id="no_rumah" placeholder="Contoh: A-12">
+        </div>
+        <div class="form-group">
+          <label>No. HP / WhatsApp:</label>
+          <input type="text" id="no_hp" placeholder="Contoh: 08123456789">
+        </div>
+        <div class="form-group">
+          <label>Jumlah Iuran (Rp):</label>
+          <input type="number" id="jumlah_iuran" placeholder="Contoh: 35000">
+        </div>
+        <div class="form-group">
+          <label>Jatuh Tempo First Entry:</label>
+          <input type="date" id="jatuh_tempo">
+        </div>
+      </div>
+      <button class="btn btn-green" id="btn_simpan" onclick="simpanTagihan()">💾 Simpan ke Database</button>
+      <button class="btn btn-gray" id="btn_batal" onclick="resetForm()" style="display: none;">Batal</button>
+    </div>
+
+    <!-- 3. Tabel Data Tagihan dengan Filter -->
+    <div class="card">
+      <h3>Daftar Tagihan Sampah Warga</h3>
+      
+      <!-- Filter Bar Per Bulan -->
+      <div class="filter-bar">
+        <label>🔍 Periode Tagihan:</label>
+        <select id="filter_bulan" onchange="loadTagihan()">
+          <option value="1">Januari</option>
+          <option value="2">Februari</option>
+          <option value="3">Maret</option>
+          <option value="4">April</option>
+          <option value="5">Mei</option>
+          <option value="6">Juni</option>
+          <option value="7">Juli</option>
+          <option value="8">Agustus</option>
+          <option value="9">September</option>
+          <option value="10">Oktober</option>
+          <option value="11">November</option>
+          <option value="12">Desember</option>
+        </select>
+        <select id="filter_tahun" onchange="loadTagihan()">
+          <option value="2025">2025</option>
+          <option value="2026">2026</option>
+          <option value="2027">2027</option>
+        </select>
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Nama</th>
+              <th>Perumahan</th>
+              <th>No. Rumah</th>
+              <th>No. HP</th>
+              <th>Iuran</th>
+              <th>Jatuh Tempo</th>
+              <th>Status</th>
+              <th>Tgl Bayar</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="table_data">
+            <tr><td colspan="9" style="text-align: center;">Memuat data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Konfirmasi Bayar (Kalender Date Picker) -->
+  <div id="modalBayar" class="modal">
+    <div class="modal-content">
+      <h3 style="margin-top:0; color:#2e7d32;">Konfirmasi Pembayaran</h3>
+      <p style="font-size:13px; color:#555;">Pilih tanggal pembayaran warga ini:</p>
+      <input type="hidden" id="bayar_target_id">
+      <input type="date" id="modal_tanggal_bayar" style="width: 100%; margin-bottom: 15px;">
+      <div style="display: flex; gap: 8px; justify-content: center;">
+        <button class="btn btn-green" onclick="eksekusiBayar()">✔ Konfirmasi Bayar</button>
+        <button class="btn btn-red" onclick="closeModalBayar()">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Struk Thermal 58mm -->
+  <div id="modalStruk" class="modal">
+    <div class="modal-content">
+      <div id="receipt-area">
+        <h4>E-RETRIBUSI SAMPAH</h4>
+        <div class="dashed-line"></div>
+        <p id="r_warga"></p>
+        <p id="r_norumah"></p>
+        <p id="r_perumahan"></p>
+        <p id="r_nohp"></p>
+        <p id="r_jatuhtempo"></p>
+        <div class="dashed-line"></div>
+        <p id="r_iuran"></p>
+        <p id="r_status"></p>
+        <p id="r_tglbayar"></p>
+        <div class="dashed-line"></div>
+        <p style="text-align: center; margin-top: 8px;">Terima Kasih Atas<br>Pembayaran Anda!</p>
+      </div>
+      <div class="no-print" style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
+        <button class="btn btn-green" onclick="window.print()">🖨️ Print</button>
+        <button class="btn btn-blue" onclick="shareStrukImage()">🔗 Share (Gambar)</button>
+        <button class="btn btn-red" onclick="closeStruk()">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://perrqmlciaemfushewmh.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlcnJxbWxjaWFlbWZ1c2hld21oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxOTA4MTksImV4cCI6MjEwMjc2NjgxOX0.VNgPSSbJVX1ib95NJC7ufZxSkBi2ocB17syX4A0BD5A";
+    
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let activeStrukData = null;
+
+    window.onload = async () => {
+      // Set default filter ke bulan & tahun berjalan
+      const now = new Date();
+      document.getElementById('filter_bulan').value = now.getMonth() + 1;
+      document.getElementById('filter_tahun').value = now.getFullYear();
+
+      await checkConnection();
+      await loadPerumahan();
+      await loadTagihan();
+    };
+
+    async function checkConnection() {
+      const statusEl = document.getElementById('status_server');
+      try {
+        const { error } = await _supabase.from('master_perumahan').select('id').limit(1);
+        if (error && error.code !== 'PGRST116') throw error;
+        statusEl.className = "status-badge status-online";
+        statusEl.innerText = "Terhubung (Online)";
+      } catch (err) {
+        statusEl.className = "status-badge status-offline";
+        statusEl.innerText = "Gagal Terhubung: " + err.message;
+      }
+    }
+
+    async function addPerumahan() {
+      const nama = document.getElementById('new_perumahan').value.trim();
+      if (!nama) return alert('Isi nama perumahan terlebih dahulu!');
+
+      const { error } = await _supabase.from('master_perumahan').insert([{ nama_perumahan: nama }]);
+
+      if (error) alert('Gagal menambah perumahan: ' + error.message);
+      else {
+        alert('Berhasil menambah perumahan!');
+        document.getElementById('new_perumahan').value = '';
+        loadPerumahan();
+      }
+    }
+
+    async function loadPerumahan() {
+      const select = document.getElementById('select_perumahan');
+      const { data } = await _supabase.from('master_perumahan').select('*');
+      select.innerHTML = '<option value="">-- Pilih Perumahan --</option>';
+      data?.forEach(p => select.innerHTML += `<option value="${p.nama_perumahan}">${p.nama_perumahan}</option>`);
+    }
+
+    async function simpanTagihan() {
+      const editId = document.getElementById('edit_id').value;
+      const perumahan = document.getElementById('select_perumahan').value;
+      const warga = document.getElementById('nama_warga').value.trim();
+      const rumah = document.getElementById('no_rumah').value.trim();
+      const noHp = document.getElementById('no_hp').value.trim();
+      const iuran = document.getElementById('jumlah_iuran').value;
+      const jatuhTempo = document.getElementById('jatuh_tempo').value;
+
+      if (!perumahan || !warga || !rumah || !iuran || !jatuhTempo) return alert('Lengkapi data utama!');
+
+      const jtDate = new Date(jatuhTempo);
+      const bulan = jtDate.getMonth() + 1;
+      const tahun = jtDate.getFullYear();
+
+      const payload = {
+        nama_perumahan: perumahan,
+        nama_warga: warga,
+        no_rumah: rumah,
+        no_hp: noHp || '-',
+        iuran: Number(iuran),
+        jatuh_tempo: jatuhTempo,
+        bulan: bulan,
+        tahun: tahun
+      };
+
+      let error;
+      if (editId) {
+        ({ error } = await _supabase.from('tagihan').update(payload).eq('id', editId));
+      } else {
+        payload.status_bayar = false;
+        payload.tanggal_bayar = null;
+        ({ error } = await _supabase.from('tagihan').insert([payload]));
+      }
+
+      if (error) alert('Gagal menyimpan data: ' + error.message);
+      else {
+        resetForm();
+        loadTagihan();
+      }
+    }
+
+    async function loadTagihan() {
+      const tbody = document.getElementById('table_data');
+      const bulan = Number(document.getElementById('filter_bulan').value);
+      const tahun = Number(document.getElementById('filter_tahun').value);
+
+      const { data, error } = await _supabase
+        .from('tagihan')
+        .select('*')
+        .eq('bulan', bulan)
+        .eq('tahun', tahun)
+        .order('id', { ascending: false });
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="9" style="color:red; text-align:center;">Error: ${error.message}</td></tr>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">Belum ada data tagihan untuk periode ini.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = '';
+      data.forEach(row => {
+        const isLunas = row.status_bayar === true || row.status_bayar === 'true';
+        
+        // Format Tanggal
+        const tglJatuhTempo = row.jatuh_tempo ? new Date(row.jatuh_tempo).toLocaleDateString('id-ID') : '-';
+        const tglBayar = row.tanggal_bayar ? new Date(row.tanggal_bayar).toLocaleDateString('id-ID') : '-';
+        const hp = row.no_hp || '-';
+
+        tbody.innerHTML += `
+          <tr>
+            <td><b>${row.nama_warga}</b></td>
+            <td>${row.nama_perumahan}</td>
+            <td>${row.no_rumah}</td>
+            <td>${hp}</td>
+            <td>Rp ${Number(row.iuran).toLocaleString('id-ID')}</td>
+            <td>${tglJatuhTempo}</td>
+            <td>
+              <span class="badge-bayar ${isLunas ? 'badge-lunas' : 'badge-pending'}">
+                ${isLunas ? 'LUNAS' : 'BELUM BAYAR'}
+              </span>
+            </td>
+            <td>${isLunas ? tglBayar : '-'}</td>
+            <td>
+              <div class="action-container">
+                <button class="btn btn-blue btn-action" onclick="cetakStruk('${row.nama_warga}', '${row.nama_perumahan}', '${row.no_rumah}', '${hp}', ${row.iuran}, '${tglJatuhTempo}', ${isLunas}, '${tglBayar}')">🧾 Struk</button>
+                <button class="btn btn-orange btn-action" onclick="editData('${row.id}', '${row.nama_perumahan}', '${row.nama_warga}', '${row.no_rumah}', '${hp}', ${row.iuran}, '${row.jatuh_tempo || ''}')">✏️ Edit</button>
+                <button class="btn btn-green btn-action" onclick="bayarData('${row.id}', ${isLunas})">💳 ${isLunas ? 'Batal' : 'Bayar'}</button>
+              </div>
+            </td>
+          </tr>`;
+      });
+    }
+
+    async function bayarData(id, statusSekarang) {
+      if (statusSekarang) {
+        const pass = prompt("Masukkan Password untuk Batal Bayar:");
+        if (pass === null) return;
+        if (pass !== "12345") return alert("Password salah! Aksi dibatalkan.");
+        
+        const { error } = await _supabase.from('tagihan').update({ status_bayar: false, tanggal_bayar: null }).eq('id', id);
+        if (error) alert('Gagal memperbarui status: ' + error.message);
+        else loadTagihan();
+      } else {
+        document.getElementById('bayar_target_id').value = id;
+        document.getElementById('modal_tanggal_bayar').value = new Date().toISOString().split('T')[0];
+        document.getElementById('modalBayar').style.display = 'flex';
+      }
+    }
+
+    async function eksekusiBayar() {
+      const id = document.getElementById('bayar_target_id').value;
+      const tglBayar = document.getElementById('modal_tanggal_bayar').value;
+
+      if (!tglBayar) return alert("Pilih tanggal pembayaran terlebih dahulu!");
+
+      // 1. Ambil data tagihan yang sedang dibayar
+      const { data: currentData, error: fetchErr } = await _supabase.from('tagihan').select('*').eq('id', id).single();
+      if (fetchErr) return alert("Gagal mengambil data tagihan!");
+
+      // 2. Update status bayar data saat ini
+      const { error } = await _supabase.from('tagihan').update({
+        status_bayar: true,
+        tanggal_bayar: tglBayar
+      }).eq('id', id);
+
+      if (error) {
+        alert('Gagal melakukan pembayaran: ' + error.message);
+      } else {
+        closeModalBayar();
+        
+        // 3. Otomatisasi: Buat tagihan bulan berikutnya jika belum ada
+        await createNextMonthTagihan(currentData);
+        loadTagihan();
+      }
+    }
+
+    async function createNextMonthTagihan(data) {
+      let nextBulan = Number(data.bulan) + 1;
+      let nextTahun = Number(data.tahun);
+      if (nextBulan > 12) {
+        nextBulan = 1;
+        nextTahun += 1;
+      }
+
+      // Cek apakah tagihan bulan depan untuk warga tersebut sudah ada
+      const { data: existing } = await _supabase
+        .from('tagihan')
+        .select('id')
+        .eq('nama_warga', data.nama_warga)
+        .eq('no_rumah', data.no_rumah)
+        .eq('bulan', nextBulan)
+        .eq('tahun', nextTahun);
+
+      if (!existing || existing.length === 0) {
+        // Hitung Jatuh Tempo bulan berikutnya
+        let currentJt = new Date(data.jatuh_tempo);
+        currentJt.setMonth(currentJt.getMonth() + 1);
+        let nextJtStr = currentJt.toISOString().split('T')[0];
+
+        await _supabase.from('tagihan').insert([{
+          nama_perumahan: data.nama_perumahan,
+          nama_warga: data.nama_warga,
+          no_rumah: data.no_rumah,
+          no_hp: data.no_hp,
+          iuran: data.iuran,
+          jatuh_tempo: nextJtStr,
+          status_bayar: false,
+          tanggal_bayar: null,
+          bulan: nextBulan,
+          tahun: nextTahun
+        }]);
+      }
+    }
+
+    function closeModalBayar() {
+      document.getElementById('modalBayar').style.display = 'none';
+    }
+
+    function editData(id, perum, warga, rumah, hp, iuran, jatuhTempo) {
+      document.getElementById('edit_id').value = id;
+      document.getElementById('select_perumahan').value = perum;
+      document.getElementById('nama_warga').value = warga;
+      document.getElementById('no_rumah').value = rumah;
+      document.getElementById('no_hp').value = hp === '-' ? '' : hp;
+      document.getElementById('jumlah_iuran').value = iuran;
+      document.getElementById('jatuh_tempo').value = jatuhTempo;
+
+      document.getElementById('btn_simpan').innerText = '💾 Update Data';
+      document.getElementById('btn_batal').style.display = 'inline-block';
+    }
+
+    function resetForm() {
+      document.getElementById('edit_id').value = '';
+      document.getElementById('nama_warga').value = '';
+      document.getElementById('no_rumah').value = '';
+      document.getElementById('no_hp').value = '';
+      document.getElementById('jumlah_iuran').value = '';
+      document.getElementById('jatuh_tempo').value = '';
+      document.getElementById('btn_simpan').innerText = '💾 Simpan ke Database';
+      document.getElementById('btn_batal').style.display = 'none';
+    }
+
+    function cetakStruk(warga, perum, rumah, hp, iuran, jatuhTempo, isLunas, tglBayar) {
+      activeStrukData = { warga, perum, rumah, hp, iuran, jatuhTempo, isLunas, tglBayar };
+
+      document.getElementById('r_warga').innerText = "Nama  : " + warga;
+      document.getElementById('r_norumah').innerText = "No.   : " + rumah;
+      document.getElementById('r_perumahan').innerText = "Perum : " + perum;
+      document.getElementById('r_nohp').innerText = "No HP : " + hp;
+      document.getElementById('r_jatuhtempo').innerText = "Jatuh Tempo: " + jatuhTempo;
+      document.getElementById('r_iuran').innerText = "Total : Rp " + Number(iuran).toLocaleString('id-ID');
+      document.getElementById('r_status').innerText = "Status: " + (isLunas ? 'LUNAS' : 'BELUM BAYAR');
+      document.getElementById('r_tglbayar').innerText = isLunas ? "Tgl Bayar  : " + tglBayar : "";
+      
+      document.getElementById('modalStruk').style.display = 'flex';
+    }
+
+    // Fungsi Share Struk Berupa File GAMBAR PNG
+    async function shareStrukImage() {
+      const receiptElement = document.getElementById('receipt-area');
+      if (!receiptElement) return;
+
+      try {
+        // Render elemen HTML struk menjadi Canvas Gambar
+        const canvas = await html2canvas(receiptElement, { scale: 2 });
+        
+        canvas.toBlob(async (blob) => {
+          if (!blob) return alert('Gagal membuat gambar struk!');
+
+          const fileName = `Struk_Sampah_${activeStrukData?.warga || 'Warga'}.png`;
+          const file = new File([blob], fileName, { type: 'image/png' });
+
+          // Menggunakan Web Share API untuk Berbagi File Gambar di HP
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: 'Struk Retribusi Sampah',
+              text: 'Berikut adalah gambar bukti retribusi sampah.'
+            });
+          } else {
+            // Fallback: Jika di PC atau browser tidak mendukung share gambar, langsung download filenya
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName;
+            link.click();
+            alert('File gambar struk berhasil diunduh!');
+          }
+        }, 'image/png');
+
+      } catch (err) {
+        alert('Terjadi kesalahan saat membuat gambar struk: ' + err.message);
+      }
+    }
+
+    function closeStruk() {
+      document.getElementById('modalStruk').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
