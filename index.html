@@ -8,7 +8,7 @@
   <style>
     * { box-sizing: border-box; }
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
-    .container { max-width: 950px; margin: 0 auto; }
+    .container { max-width: 980px; margin: 0 auto; }
     .header { background: #2e7d32; color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
     .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; background: #e0e0e0; color: #333; }
     .status-online { background: #d4edda; color: #155724; }
@@ -126,8 +126,9 @@
         <table>
           <thead>
             <tr>
-              <th>Warga</th>
-              <th>Perumahan / Rumah</th>
+              <th>Nama</th>
+              <th>Perumahan</th>
+              <th>No. Rumah</th>
               <th>Iuran</th>
               <th>Jatuh Tempo</th>
               <th>Status / Tgl Bayar</th>
@@ -135,7 +136,7 @@
             </tr>
           </thead>
           <tbody id="table_data">
-            <tr><td colspan="6" style="text-align: center;">Memuat data...</td></tr>
+            <tr><td colspan="7" style="text-align: center;">Memuat data...</td></tr>
           </tbody>
         </table>
       </div>
@@ -266,12 +267,12 @@
       const { data, error } = await _supabase.from('tagihan').select('*').order('id', { ascending: false });
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="6" style="color:red; text-align:center;">Error: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="color:red; text-align:center;">Error: ${error.message}</td></tr>`;
         return;
       }
 
       if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Belum ada data tagihan.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Belum ada data tagihan.</td></tr>`;
         return;
       }
 
@@ -286,7 +287,8 @@
         tbody.innerHTML += `
           <tr>
             <td><b>${row.nama_warga}</b></td>
-            <td>${row.nama_perumahan} (${row.no_rumah})</td>
+            <td>${row.nama_perumahan}</td>
+            <td>${row.no_rumah}</td>
             <td>Rp ${Number(row.iuran).toLocaleString('id-ID')}</td>
             <td>${tglJatuhTempo}</td>
             <td>
@@ -306,7 +308,6 @@
 
     async function bayarData(id, statusSekarang) {
       if (statusSekarang) {
-        // Batal Bayar dengan proteksi password
         const pass = prompt("Masukkan Password untuk Batal Bayar:");
         if (pass === null) return;
         if (pass !== "12345") return alert("Password salah! Aksi dibatalkan.");
@@ -315,7 +316,6 @@
         if (error) alert('Gagal memperbarui status: ' + error.message);
         else loadTagihan();
       } else {
-        // Buka modal pemilih tanggal bayar
         document.getElementById('bayar_target_id').value = id;
         document.getElementById('modal_tanggal_bayar').value = new Date().toISOString().split('T')[0];
         document.getElementById('modalBayar').style.display = 'flex';
@@ -369,7 +369,7 @@
     }
 
     function cetakStruk(warga, perum, rumah, iuran, jatuhTempo, isLunas, tglBayar) {
-      document.getElementById('r_warga').innerText = "Warga : " + warga;
+      document.getElementById('r_warga').innerText = "Nama  : " + warga;
       document.getElementById('r_norumah').innerText = "No.   : " + rumah;
       document.getElementById('r_perumahan').innerText = "Perum : " + perum;
       document.getElementById('r_jatuhtempo').innerText = "Jatuh Tempo: " + jatuhTempo;
