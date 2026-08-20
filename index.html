@@ -18,12 +18,13 @@
     .card { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
     .card h3 { margin-top: 0; color: #2e7d32; font-size: 16px; border-bottom: 2px solid #e8f5e9; padding-bottom: 8px; }
     
-    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 10px; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 15px; text-align: left; }
     .form-group { display: flex; flex-direction: column; }
     .form-group label { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #555; }
     input, select { padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
     
-    .filter-bar { display: flex; align-items: center; gap: 10px; background: #e8f5e9; padding: 12px 15px; border-radius: 6px; margin-bottom: 15px; flex-wrap: wrap; }
+    .filter-bar { display: flex; align-items: center; justify-content: space-between; background: #e8f5e9; padding: 12px 15px; border-radius: 6px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+    .filter-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .filter-bar label { font-weight: bold; font-size: 13px; color: #2e7d32; }
 
     .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; color: #fff; font-weight: bold; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
@@ -44,8 +45,9 @@
     .badge-lunas { background: #d4edda; color: #155724; }
     .badge-pending { background: #fff3cd; color: #856404; }
 
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
-    .modal-content { background: #fff; padding: 20px; border-radius: 8px; width: 340px; text-align: center; }
+    /* Modal Global Styling */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; padding: 15px; }
+    .modal-content { background: #fff; padding: 20px; border-radius: 8px; width: 100%; max-width: 500px; text-align: center; max-height: 90vh; overflow-y: auto; }
 
     /* Layout Struk Rapi Presisi */
     #receipt-area {
@@ -63,21 +65,9 @@
     #receipt-area h4 { text-align: center; margin: 0 0 5px 0; font-size: 12px; text-transform: uppercase; }
     .dashed-line { border-bottom: 1px dashed #000; margin: 6px 0; }
 
-    .receipt-row {
-      display: flex;
-      justify-content: space-between;
-      margin: 2px 0;
-    }
-    .receipt-label {
-      width: 90px;
-      display: flex;
-      justify-content: space-between;
-      padding-right: 5px;
-    }
-    .receipt-val {
-      flex: 1;
-      word-break: break-word;
-    }
+    .receipt-row { display: flex; justify-content: space-between; margin: 2px 0; }
+    .receipt-label { width: 90px; display: flex; justify-content: space-between; padding-right: 5px; }
+    .receipt-val { flex: 1; word-break: break-word; }
 
     .perum-list { margin-top: 15px; display: flex; flex-wrap: wrap; gap: 8px; }
     .perum-item { background: #f8f9fa; border: 1px solid #ddd; padding: 4px 8px; border-radius: 4px; font-size: 12px; display: flex; align-items: center; gap: 6px; }
@@ -99,11 +89,11 @@
       <div id="status_server" class="status-badge status-offline">Memeriksa Koneksi...</div>
     </div>
 
-    <!-- 1. Form & Manajemen Master Perumahan -->
+    <!-- 1. Form & Kelola Master Perumahan -->
     <div class="card">
       <h3>Kelola Master Perumahan</h3>
       <input type="hidden" id="edit_perumahan_id">
-      <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+      <div style="display: flex; gap: 10px;">
         <input type="text" id="new_perumahan" placeholder="Contoh: Paradise Residence 4" style="flex: 1;">
         <button class="btn btn-blue" id="btn_perumahan" onclick="savePerumahan()">+ Tambah Perumahan</button>
         <button class="btn btn-gray" id="btn_batal_perumahan" onclick="resetFormPerumahan()" style="display: none;">Batal</button>
@@ -111,10 +101,67 @@
       <div class="perum-list" id="perumahan_tags"></div>
     </div>
 
-    <!-- 2. Form Input Tagihan Warga -->
+    <!-- 2. Tabel Data Tagihan dengan Filter & Tombol Tambah Warga -->
     <div class="card">
-      <h3>Tambah Tagihan Warga Baru</h3>
+      <h3>Daftar Tagihan Sampah Warga</h3>
+      
+      <div class="filter-bar">
+        <div class="filter-group">
+          <label>🔍 Periode:</label>
+          <select id="filter_bulan" onchange="loadTagihan()">
+            <option value="1">Januari</option>
+            <option value="2">Februari</option>
+            <option value="3">Maret</option>
+            <option value="4">April</option>
+            <option value="5">Mei</option>
+            <option value="6">Juni</option>
+            <option value="7">Juli</option>
+            <option value="8">Agustus</option>
+            <option value="9">September</option>
+            <option value="10">Oktober</option>
+            <option value="11">November</option>
+            <option value="12">Desember</option>
+          </select>
+          <select id="filter_tahun" onchange="loadTagihan()">
+            <option value="2025">2025</option>
+            <option value="2026">2026</option>
+            <option value="2027">2027</option>
+          </select>
+        </div>
+
+        <!-- Tombol Buka Modal Form Warga -->
+        <button class="btn btn-green" onclick="openModalFormWarga()">➕ Tambah Tagihan Warga</button>
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Nama</th>
+              <th>Perumahan</th>
+              <th>No. Rumah</th>
+              <th>No. HP</th>
+              <th>Iuran</th>
+              <th>Jatuh Tempo</th>
+              <th>Status</th>
+              <th>Tgl Bayar</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="table_data">
+            <tr><td colspan="9" style="text-align: center;">Memuat data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL FLOATING: Form Input/Edit Tagihan Warga -->
+  <div id="modalFormWarga" class="modal">
+    <div class="modal-content">
+      <h3 id="modal_form_title" style="margin-top:0; color:#2e7d32; text-align: left; border-bottom: 2px solid #e8f5e9; padding-bottom: 8px;">Tambah Tagihan Warga Baru</h3>
       <input type="hidden" id="edit_id">
+      
       <div class="form-grid">
         <div class="form-group">
           <label>Nama Perumahan / Perum:</label>
@@ -141,62 +188,17 @@
           <input type="date" id="jatuh_tempo">
         </div>
       </div>
-      <button class="btn btn-green" id="btn_simpan" onclick="simpanTagihan()">💾 Simpan ke Database</button>
-      <button class="btn btn-gray" id="btn_batal" onclick="resetForm()" style="display: none;">Batal</button>
-    </div>
 
-    <!-- 3. Tabel Data Tagihan dengan Filter -->
-    <div class="card">
-      <h3>Daftar Tagihan Sampah Warga</h3>
-      
-      <div class="filter-bar">
-        <label>🔍 Periode Tagihan:</label>
-        <select id="filter_bulan" onchange="loadTagihan()">
-          <option value="1">Januari</option>
-          <option value="2">Februari</option>
-          <option value="3">Maret</option>
-          <option value="4">April</option>
-          <option value="5">Mei</option>
-          <option value="6">Juni</option>
-          <option value="7">Juli</option>
-          <option value="8">Agustus</option>
-          <option value="9">September</option>
-          <option value="10">Oktober</option>
-          <option value="11">November</option>
-          <option value="12">Desember</option>
-        </select>
-        <select id="filter_tahun" onchange="loadTagihan()">
-          <option value="2025">2025</option>
-          <option value="2026">2026</option>
-          <option value="2027">2027</option>
-        </select>
-      </div>
-
-      <div style="overflow-x: auto;">
-        <table>
-          <thead>
-            <tr>
-              <th>Nama</th>
-              <th>Perumahan</th>
-              <th>No. Rumah</th>
-              <th>No. HP</th>
-              <th>Iuran</th>
-              <th>Jatuh Tempo</th>
-              <th>Status</th>
-              <th>Tgl Bayar</th>
-              <th>Aksi</th>
-            </tr>
-          </thead>
-          <tbody id="table_data">
-            <tr><td colspan="9" style="text-align: center;">Memuat data...</td></tr>
-          </tbody>
-        </table>
+      <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 15px;">
+        <button class="btn btn-green" id="btn_simpan" onclick="simpanTagihan()">💾 Simpan Ke Database</button>
+        <button class="btn btn-red" onclick="closeModalFormWarga()">Batal</button>
       </div>
     </div>
   </div>
 
+  <!-- Modal Konfirmasi Bayar -->
   <div id="modalBayar" class="modal">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width: 340px;">
       <h3 style="margin-top:0; color:#2e7d32;">Konfirmasi Pembayaran</h3>
       <p style="font-size:13px; color:#555;">Pilih tanggal pembayaran warga ini:</p>
       <input type="hidden" id="bayar_target_id">
@@ -208,9 +210,9 @@
     </div>
   </div>
 
-  <!-- Modal Struk Thermal Presisi -->
+  <!-- Modal Struk Thermal -->
   <div id="modalStruk" class="modal">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width: 340px;">
       <div id="receipt-area">
         <h4>E-RETRIBUSI SAMPAH</h4>
         <div class="dashed-line"></div>
@@ -264,7 +266,20 @@
       }
     }
 
-    /* Kelola Master Perumahan (Tambah, Edit, Hapus, Urut A-Z) */
+    /* Modal Form Warga Control */
+    function openModalFormWarga() {
+      resetForm();
+      document.getElementById('modal_form_title').innerText = "Tambah Tagihan Warga Baru";
+      document.getElementById('btn_simpan').innerText = "💾 Simpan ke Database";
+      document.getElementById('modalFormWarga').style.display = 'flex';
+    }
+
+    function closeModalFormWarga() {
+      document.getElementById('modalFormWarga').style.display = 'none';
+      resetForm();
+    }
+
+    /* Kelola Master Perumahan */
     async function savePerumahan() {
       const editId = document.getElementById('edit_perumahan_id').value;
       const nama = document.getElementById('new_perumahan').value.trim();
@@ -310,7 +325,6 @@
       const select = document.getElementById('select_perumahan');
       const tagsContainer = document.getElementById('perumahan_tags');
       
-      // Ambil & Urutkan Nama Perumahan dari A ke Z
       const { data } = await _supabase.from('master_perumahan').select('*').order('nama_perumahan', { ascending: true });
       
       select.innerHTML = '<option value="">-- Pilih Perumahan --</option>';
@@ -364,7 +378,7 @@
 
       if (error) alert('Gagal menyimpan data: ' + error.message);
       else {
-        resetForm();
+        closeModalFormWarga();
         loadTagihan();
       }
     }
@@ -399,7 +413,6 @@
         const tglBayar = row.tanggal_bayar ? new Date(row.tanggal_bayar).toLocaleDateString('id-ID') : '-';
         const hp = row.no_hp || '-';
 
-        // Hanya tampilkan tombol Struk bila sudah LUNAS
         const btnStrukHtml = isLunas 
           ? `<button class="btn btn-blue btn-action" onclick="cetakStruk('${row.nama_warga}', '${row.nama_perumahan}', '${row.no_rumah}', '${hp}', ${row.iuran}, '${tglJatuhTempo}', '${tglBayar}')">🧾 Struk</button>`
           : '';
@@ -551,8 +564,9 @@
       document.getElementById('jumlah_iuran').value = iuran;
       document.getElementById('jatuh_tempo').value = jatuhTempo;
 
+      document.getElementById('modal_form_title').innerText = "Edit Tagihan Warga";
       document.getElementById('btn_simpan').innerText = '💾 Update Data';
-      document.getElementById('btn_batal').style.display = 'inline-block';
+      document.getElementById('modalFormWarga').style.display = 'flex';
     }
 
     function resetForm() {
@@ -562,8 +576,6 @@
       document.getElementById('no_hp').value = '';
       document.getElementById('jumlah_iuran').value = '';
       document.getElementById('jatuh_tempo').value = '';
-      document.getElementById('btn_simpan').innerText = '💾 Simpan ke Database';
-      document.getElementById('btn_batal').style.display = 'none';
     }
 
     function cetakStruk(warga, perum, rumah, hp, iuran, jatuhTempo, tglBayar) {
