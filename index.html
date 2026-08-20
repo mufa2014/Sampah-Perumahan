@@ -56,9 +56,17 @@
     .btn-action { padding: 4px 7px; font-size: 11px; font-weight: 600; white-space: nowrap; border-radius: 3px; }
     .action-container { display: flex; flex-direction: row; flex-wrap: nowrap; gap: 4px; align-items: center; justify-content: flex-start; }
 
+    /* Penyesuaian Lebar Kolom Tabel */
     table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
-    th, td { border: 1px solid #e0e0e0; padding: 8px; text-align: left; }
+    th, td { border: 1px solid #e0e0e0; padding: 8px 6px; text-align: left; }
     th { background: #f8f9fa; color: #333; }
+    
+    th.col-no, td.col-no { width: 35px; text-align: center; }
+    th.col-norumah, td.col-norumah { width: 60px; text-align: center; }
+    th.col-iuran, td.col-iuran { white-space: nowrap; min-width: 90px; }
+    th.col-hp, td.col-hp { white-space: nowrap; }
+    th.col-tgl, td.col-tgl { white-space: nowrap; text-align: center; }
+
     .badge-bayar { padding: 3px 6px; border-radius: 3px; font-size: 11px; font-weight: bold; display: inline-block; }
     .badge-lunas { background: #d4edda; color: #155724; }
     .badge-pending { background: #fff3cd; color: #856404; }
@@ -156,20 +164,20 @@
         </select>
       </div>
 
-      <!-- 5. ISI DATA -->
+      <!-- 5. ISI DATA TABEL -->
       <div style="overflow-x: auto;">
         <table>
           <thead>
             <tr>
-              <th style="width: 40px; text-align: center;">No</th>
+              <th class="col-no">No</th>
               <th>Nama</th>
               <th>Perumahan</th>
-              <th>No. Rumah</th>
-              <th>No. HP</th>
-              <th>Iuran</th>
-              <th>Jatuh Tempo</th>
+              <th class="col-norumah">No. Rumah</th>
+              <th class="col-hp">No. HP</th>
+              <th class="col-iuran">Iuran</th>
+              <th class="col-tgl">Jatuh Tempo</th>
               <th>Status</th>
-              <th>Tgl Bayar</th>
+              <th class="col-tgl">Tgl Bayar</th>
               <th>Aksi</th>
             </tr>
           </thead>
@@ -485,26 +493,22 @@
       const filterPerum = document.getElementById('filter_perumahan').value;
       const filterStat = document.getElementById('filter_status').value;
 
-      // QUERY UTAMA
       let query = _supabase
         .from('tagihan')
         .select('*')
         .eq('bulan', bulan)
         .eq('tahun', tahun);
 
-      // FILTER NAMA PERUMAHAN
       if (filterPerum !== 'ALL') {
         query = query.eq('nama_perumahan', filterPerum);
       }
 
-      // FILTER STATUS PEMBAYARAN
       if (filterStat === 'LUNAS') {
         query = query.eq('status_bayar', true);
       } else if (filterStat === 'BELUM') {
         query = query.eq('status_bayar', false);
       }
 
-      // DIURUTKAN BERDASARKAN JATUH TEMPO (Paling muda di posisi paling bawah)
       const { data, error } = await query.order('jatuh_tempo', { ascending: false });
 
       if (error) {
@@ -531,19 +535,19 @@
 
         tbody.innerHTML += `
           <tr>
-            <td style="text-align: center; font-weight: bold; color: #555;">${index + 1}</td>
+            <td class="col-no" style="font-weight: bold; color: #555;">${index + 1}</td>
             <td><b>${row.nama_warga}</b></td>
             <td>${row.nama_perumahan}</td>
-            <td>${row.no_rumah}</td>
-            <td>${hp}</td>
-            <td>Rp ${Number(row.iuran).toLocaleString('id-ID')}</td>
-            <td>${tglJatuhTempo}</td>
+            <td class="col-norumah">${row.no_rumah}</td>
+            <td class="col-hp">${hp}</td>
+            <td class="col-iuran">Rp ${Number(row.iuran).toLocaleString('id-ID')}</td>
+            <td class="col-tgl">${tglJatuhTempo}</td>
             <td>
               <span class="badge-bayar ${isLunas ? 'badge-lunas' : 'badge-pending'}">
                 ${isLunas ? 'LUNAS' : 'BELUM BAYAR'}
               </span>
             </td>
-            <td>${isLunas ? tglBayar : '-'}</td>
+            <td class="col-tgl">${isLunas ? tglBayar : '-'}</td>
             <td>
               <div class="action-container">
                 ${btnStrukHtml}
