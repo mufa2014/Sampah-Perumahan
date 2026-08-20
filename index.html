@@ -371,17 +371,61 @@
 
     async function bayarData(id, statusSekarang) {
       if (statusSekarang) {
+        // 1. Konfirmasi Batal Bayar
         const pass = prompt("Masukkan Password untuk Batal Bayar:");
         if (pass === null) return;
         if (pass !== "12345") return alert("Password salah! Aksi dibatalkan.");
         
-        const { error } = await _supabase.from('tagihan').update({ status_bayar: false, tanggal_bayar: null }).eq('id', id);
-        if (error) alert('Gagal memperbarui status: ' + error.message);
-        else loadTagihan();
+        // 2. Ambil data tagihan yang sedang dibatalkan
+        const { data: currentData, error: fetchErr } = await _supabase
+          .from('tagihan')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (fetchErr) return alert("Gagal mengambil data tagihan!");
+
+        // 3. Ubah status data saat ini menjadi BELUM BAYAR
+        const { error: updateErr } = await _supabase
+          .from('tagihan')
+          .update({ status_bayar: false, tanggal_bayar: null })
+          .eq('id', id);
+
+        if (updateErr) {
+          alert('Gagal memperbarui status: ' + updateErr.message);
+        } else {
+          // 4. Hapus tagihan bulan berikutnya jika statusnya masih BELUM BAYAR
+          await removeNextMonthTagihan(currentData);
+          loadTagihan();
+        }
       } else {
+        // Jalankan Modal Bayar
         document.getElementById('bayar_target_id').value = id;
         document.getElementById('modal_tanggal_bayar').value = new Date().toISOString().split('T')[0];
         document.getElementById('modalBayar').style.display = 'flex';
+      }
+    }
+
+    // Fungsi Otomatis: Menghapus tagihan bulan depan jika transaksi dibatalkan
+    async function removeNextMonthTagihan(data) {
+      let nextBulan = Number(data.bulan) + 1;
+      let nextTahun = Number(data.tahun);
+      if (nextBulan > 12) {
+        nextBulan = 1;
+        nextTahun += 1;
+      }
+
+      const { error } = await _supabase
+        .from('tagihan')
+        .delete()
+        .eq('nama_warga', data.nama_warga)
+        .eq('no_rumah', data.no_rumah)
+        .eq('bulan', nextBulan)
+        .eq('tahun', nextTahun)
+        .eq('status_bayar', false); // Hanya hapus jika belum dibayar
+
+      if (error) {
+        console.error("Gagal menghapus tagihan bulan berikutnya:", error.message);
       }
     }
 
@@ -412,6 +456,7 @@
       }
     }
 
+    // Fungsi Otomatis: Membuat tagihan bulan berikutnya saat pembayaran sukses
     async function createNextMonthTagihan(data) {
       let nextBulan = Number(data.bulan) + 1;
       let nextTahun = Number(data.tahun);
@@ -499,7 +544,6 @@
       if (!receiptElement) return;
 
       try {
-        // Render elemen HTML struk menjadi Canvas Gambar
         const canvas = await html2canvas(receiptElement, { scale: 2 });
         
         canvas.toBlob(async (blob) => {
@@ -508,7 +552,6 @@
           const fileName = `Struk_Sampah_${activeStrukData?.warga || 'Warga'}.png`;
           const file = new File([blob], fileName, { type: 'image/png' });
 
-          // Menggunakan Web Share API untuk Berbagi File Gambar di HP
           if (navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share({
               files: [file],
@@ -516,7 +559,6 @@
               text: 'Berikut adalah gambar bukti retribusi sampah.'
             });
           } else {
-            // Fallback: Jika di PC atau browser tidak mendukung share gambar, langsung download filenya
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = fileName;
