@@ -8,7 +8,7 @@
   <style>
     * { box-sizing: border-box; }
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
-    .container { max-width: 900px; margin: 0 auto; }
+    .container { max-width: 950px; margin: 0 auto; }
     .header { background: #2e7d32; color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
     .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; background: #e0e0e0; color: #333; }
     .status-online { background: #d4edda; color: #155724; }
@@ -17,7 +17,7 @@
     .card { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
     .card h3 { margin-top: 0; color: #2e7d32; font-size: 16px; border-bottom: 2px solid #e8f5e9; padding-bottom: 8px; }
     
-    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 10px; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 10px; }
     .form-group { display: flex; flex-direction: column; }
     .form-group label { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #555; }
     input, select { padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
@@ -30,8 +30,8 @@
     .btn-red { background: #dc3545; }
     .btn-gray { background: #6c757d; }
     
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-    th, td { border: 1px solid #e0e0e0; padding: 10px; text-align: left; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+    th, td { border: 1px solid #e0e0e0; padding: 8px; text-align: left; }
     th { background: #f8f9fa; color: #333; }
     .badge-bayar { padding: 3px 6px; border-radius: 3px; font-size: 11px; font-weight: bold; }
     .badge-lunas { background: #d4edda; color: #155724; }
@@ -106,6 +106,10 @@
           <label>Jumlah Iuran (Rp):</label>
           <input type="number" id="jumlah_iuran" placeholder="Contoh: 35000">
         </div>
+        <div class="form-group">
+          <label>Jatuh Tempo:</label>
+          <input type="date" id="jatuh_tempo">
+        </div>
       </div>
       <button class="btn btn-green" id="btn_simpan" onclick="simpanTagihan()">💾 Simpan ke Database</button>
       <button class="btn btn-gray" id="btn_batal" onclick="resetForm()" style="display: none;">Batal</button>
@@ -119,10 +123,10 @@
           <thead>
             <tr>
               <th>Warga</th>
-              <th>Perumahan</th>
-              <th>No. Rumah</th>
+              <th>Perumahan / Rumah</th>
               <th>Iuran</th>
-              <th>Status</th>
+              <th>Jatuh Tempo</th>
+              <th>Status / Tgl Bayar</th>
               <th>Aksi</th>
             </tr>
           </thead>
@@ -141,13 +145,14 @@
         <h4>E-RETRIBUSI SAMPAH</h4>
         <p style="text-align: center;" id="r_perumahan_head"></p>
         <div class="dashed-line"></div>
-        <p id="r_tanggal"></p>
         <p id="r_warga"></p>
         <p id="r_norumah"></p>
         <p id="r_perumahan"></p>
+        <p id="r_jatuhtempo"></p>
         <div class="dashed-line"></div>
         <p id="r_iuran"></p>
         <p id="r_status"></p>
+        <p id="r_tglbayar"></p>
         <div class="dashed-line"></div>
         <p style="text-align: center; margin-top: 8px;">Terima Kasih Atas<br>Pembayaran Anda!</p>
       </div>
@@ -164,14 +169,12 @@
     
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Inisialisasi
     window.onload = async () => {
       await checkConnection();
       await loadPerumahan();
       await loadTagihan();
     };
 
-    // 1. Cek Koneksi Supabase
     async function checkConnection() {
       const statusEl = document.getElementById('status_server');
       try {
@@ -185,16 +188,14 @@
       }
     }
 
-    // 2. Kelola Master Perumahan
     async function addPerumahan() {
       const nama = document.getElementById('new_perumahan').value.trim();
       if (!nama) return alert('Isi nama perumahan terlebih dahulu!');
 
       const { error } = await _supabase.from('master_perumahan').insert([{ nama_perumahan: nama }]);
 
-      if (error) {
-        alert('Gagal menambah perumahan: ' + error.message);
-      } else {
+      if (error) alert('Gagal menambah perumahan: ' + error.message);
+      else {
         alert('Berhasil menambah perumahan!');
         document.getElementById('new_perumahan').value = '';
         loadPerumahan();
@@ -203,30 +204,27 @@
 
     async function loadPerumahan() {
       const select = document.getElementById('select_perumahan');
-      const { data, error } = await _supabase.from('master_perumahan').select('*');
-      if (error) return;
-      
+      const { data } = await _supabase.from('master_perumahan').select('*');
       select.innerHTML = '<option value="">-- Pilih Perumahan --</option>';
-      data?.forEach(p => {
-        select.innerHTML += `<option value="${p.nama_perumahan}">${p.nama_perumahan}</option>`;
-      });
+      data?.forEach(p => select.innerHTML += `<option value="${p.nama_perumahan}">${p.nama_perumahan}</option>`);
     }
 
-    // 3. Simpan & Edit Tagihan
     async function simpanTagihan() {
       const editId = document.getElementById('edit_id').value;
       const perumahan = document.getElementById('select_perumahan').value;
       const warga = document.getElementById('nama_warga').value.trim();
       const rumah = document.getElementById('no_rumah').value.trim();
       const iuran = document.getElementById('jumlah_iuran').value;
+      const jatuhTempo = document.getElementById('jatuh_tempo').value;
 
-      if (!perumahan || !warga || !rumah || !iuran) return alert('Lengkapi semua data!');
+      if (!perumahan || !warga || !rumah || !iuran || !jatuhTempo) return alert('Lengkapi semua data!');
 
       const payload = {
         nama_perumahan: perumahan,
         nama_warga: warga,
         no_rumah: rumah,
-        iuran: Number(iuran)
+        iuran: Number(iuran),
+        jatuh_tempo: jatuhTempo
       };
 
       let error;
@@ -237,15 +235,13 @@
         ({ error } = await _supabase.from('tagihan').insert([payload]));
       }
 
-      if (error) {
-        alert('Gagal menyimpan data: ' + error.message);
-      } else {
+      if (error) alert('Gagal menyimpan data: ' + error.message);
+      else {
         resetForm();
         loadTagihan();
       }
     }
 
-    // 4. Render Tabel Data
     async function loadTagihan() {
       const tbody = document.getElementById('table_data');
       const { data, error } = await _supabase.from('tagihan').select('*').order('id', { ascending: false });
@@ -263,48 +259,59 @@
       tbody.innerHTML = '';
       data.forEach(row => {
         const isLunas = row.status_bayar === true || row.status_bayar === 'true';
+        
+        // Format Tgl
+        const tglJatuhTempo = row.jatuh_tempo ? new Date(row.jatuh_tempo).toLocaleDateString('id-ID') : '-';
+        const tglBayar = row.tanggal_bayar ? new Date(row.tanggal_bayar).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }) : '-';
+
         tbody.innerHTML += `
           <tr>
             <td><b>${row.nama_warga}</b></td>
-            <td>${row.nama_perumahan}</td>
-            <td>${row.no_rumah}</td>
+            <td>${row.nama_perumahan} (${row.no_rumah})</td>
             <td>Rp ${Number(row.iuran).toLocaleString('id-ID')}</td>
+            <td>${tglJatuhTempo}</td>
             <td>
               <span class="badge-bayar ${isLunas ? 'badge-lunas' : 'badge-pending'}">
                 ${isLunas ? 'LUNAS' : 'BELUM BAYAR'}
               </span>
+              <br><small style="color: #666;">${isLunas ? 'Bayar: ' + tglBayar : ''}</small>
             </td>
             <td>
-              <button class="btn btn-blue" onclick="cetakStruk('${row.nama_warga}', '${row.nama_perumahan}', '${row.no_rumah}', ${row.iuran}, ${isLunas})">🧾 Struk</button>
-              <button class="btn btn-orange" onclick="editData('${row.id}', '${row.nama_perumahan}', '${row.nama_warga}', '${row.no_rumah}', ${row.iuran})">✏️ Edit</button>
+              <button class="btn btn-blue" onclick="cetakStruk('${row.nama_warga}', '${row.nama_perumahan}', '${row.no_rumah}', ${row.iuran}, '${tglJatuhTempo}', ${isLunas}, '${tglBayar}')">🧾 Struk</button>
+              <button class="btn btn-orange" onclick="editData('${row.id}', '${row.nama_perumahan}', '${row.nama_warga}', '${row.no_rumah}', ${row.iuran}, '${row.jatuh_tempo || ''}')">✏️ Edit</button>
               <button class="btn btn-green" onclick="bayarData('${row.id}', ${isLunas})">💳 ${isLunas ? 'Batal Bayar' : 'Bayar'}</button>
             </td>
           </tr>`;
       });
     }
 
-    // 5. Fungsi Aksi dengan Proteksi Password untuk Batal Bayar
     async function bayarData(id, statusSekarang) {
+      let updateData = {};
+
       if (statusSekarang) {
+        // Batal Bayar (minta Password)
         const pass = prompt("Masukkan Password untuk Batal Bayar:");
-        if (pass === null) return; // Pengguna menekan tombol Batal
-        if (pass !== "12345") {
-          alert("Password salah! Aksi Batal Bayar dibatalkan.");
-          return;
-        }
+        if (pass === null) return;
+        if (pass !== "12345") return alert("Password salah! Aksi dibatalkan.");
+        
+        updateData = { status_bayar: false, tanggal_bayar: null };
+      } else {
+        // Klik Bayar (catat tanggal bayar sekarang)
+        updateData = { status_bayar: true, tanggal_bayar: new Date().toISOString() };
       }
 
-      const { error } = await _supabase.from('tagihan').update({ status_bayar: !statusSekarang }).eq('id', id);
+      const { error } = await _supabase.from('tagihan').update(updateData).eq('id', id);
       if (error) alert('Gagal memperbarui status: ' + error.message);
       else loadTagihan();
     }
 
-    function editData(id, perum, warga, rumah, iuran) {
+    function editData(id, perum, warga, rumah, iuran, jatuhTempo) {
       document.getElementById('edit_id').value = id;
       document.getElementById('select_perumahan').value = perum;
       document.getElementById('nama_warga').value = warga;
       document.getElementById('no_rumah').value = rumah;
       document.getElementById('jumlah_iuran').value = iuran;
+      document.getElementById('jatuh_tempo').value = jatuhTempo;
 
       document.getElementById('btn_simpan').innerText = '💾 Update Data';
       document.getElementById('btn_batal').style.display = 'inline-block';
@@ -315,18 +322,20 @@
       document.getElementById('nama_warga').value = '';
       document.getElementById('no_rumah').value = '';
       document.getElementById('jumlah_iuran').value = '';
+      document.getElementById('jatuh_tempo').value = '';
       document.getElementById('btn_simpan').innerText = '💾 Simpan ke Database';
       document.getElementById('btn_batal').style.display = 'none';
     }
 
-    function cetakStruk(warga, perum, rumah, iuran, isLunas) {
+    function cetakStruk(warga, perum, rumah, iuran, jatuhTempo, isLunas, tglBayar) {
       document.getElementById('r_perumahan_head').innerText = perum;
-      document.getElementById('r_tanggal').innerText = "Tgl   : " + new Date().toLocaleDateString('id-ID');
       document.getElementById('r_warga').innerText = "Warga : " + warga;
       document.getElementById('r_norumah').innerText = "No.   : " + rumah;
       document.getElementById('r_perumahan').innerText = "Perum : " + perum;
+      document.getElementById('r_jatuhtempo').innerText = "Jatuh Tempo: " + jatuhTempo;
       document.getElementById('r_iuran').innerText = "Total : Rp " + Number(iuran).toLocaleString('id-ID');
       document.getElementById('r_status').innerText = "Status: " + (isLunas ? 'LUNAS' : 'BELUM BAYAR');
+      document.getElementById('r_tglbayar').innerText = isLunas ? "Tgl Bayar : " + tglBayar : "";
       
       document.getElementById('modalStruk').style.display = 'flex';
     }
