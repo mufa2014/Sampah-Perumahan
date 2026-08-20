@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Aplikasi Tagihan Sampah Multi-Perumahan</title>
+
+    <!-- Pustaka SheetJS untuk Export Excel (.xlsx) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
     <style>
         :root {
             --primary: #2e7d32;
@@ -83,7 +87,7 @@
         .form-group label { font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; }
         .form-group input, .form-group select { padding: 9px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.85rem; }
 
-        /* Tombol */
+        /* Button Styling */
         .btn { background-color: var(--primary); color: white; border: none; padding: 11px; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 15px; font-weight: bold; }
         .btn:hover { background-color: var(--primary-hover); }
         .btn-action { border: none; cursor: pointer; padding: 6px 12px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin: 2px; }
@@ -94,6 +98,7 @@
         .btn-delete { background-color: #ffebee; color: var(--danger); }
         .btn-secondary { background-color: #ffffff; border: 1px solid var(--border); color: #333; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600; flex: 1; text-align: center; }
         .btn-export { background-color: #157347; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold; flex: 1; text-align: center; }
+        .btn-export:hover { background-color: #115c38; }
         .btn-primary-toggle { background-color: var(--primary); color: white; border: none; padding: 10px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: bold; width: 100%; }
 
         /* Desktop Table Default */
@@ -108,11 +113,9 @@
         @media screen and (max-width: 768px) {
             .card-header-flex { flex-direction: column; align-items: stretch; }
             
-            /* Sembunyikan Header Tabel pada HP */
             table, thead, tbody, th, td, tr { display: block; }
             thead tr { position: absolute; top: -9999px; left: -9999px; }
             
-            /* Buat Baris Tabel Jadi Bentuk Kartu */
             tr {
                 background: #ffffff;
                 border: 1px solid var(--border);
@@ -135,7 +138,6 @@
             }
             td:last-child { border-bottom: none; }
 
-            /* Menampilkan Judul Kolom di Sebelah Kiri */
             td::before {
                 content: attr(data-label);
                 font-weight: 700;
@@ -145,7 +147,6 @@
                 font-size: 0.8rem;
             }
 
-            /* Penataan Khusus Tombol Aksi di HP */
             td[data-label="Aksi"] {
                 flex-direction: row;
                 justify-content: flex-end;
@@ -159,7 +160,7 @@
             }
         }
 
-        /* Style Modal Pop-Up Melayang */
+        /* Modal Pop-Up Melayang */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -254,7 +255,7 @@
                         <label for="filterBulan">Periode:</label>
                         <input type="month" id="filterBulan" onchange="renderTable()">
                     </div>
-                    <button type="button" class="btn-export" onclick="exportToCSV()">📥 Backup CSV</button>
+                    <button type="button" class="btn-export" onclick="exportToExcel()">📊 Backup Excel</button>
                 </div>
             </div>
 
@@ -276,6 +277,7 @@
         </div>
     </div>
 
+    <!-- Modal Form Melayang -->
     <div class="modal-overlay" id="modalFormOverlay">
         <div class="modal-card">
             <div class="modal-header">
@@ -321,6 +323,7 @@
         </div>
     </div>
 
+    <!-- Template Struk Cetak -->
     <div id="receiptArea">
         <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px;">
             <h3 style="font-size: 1rem;">BUKTI PEMBAYARAN IURAN</h3>
@@ -366,7 +369,8 @@
             if (e.target === document.getElementById('modalFormOverlay')) closeModal();
         }
 
-        function exportToCSV() {
+        // FUNGSI EKSPOR KE EXCEL (.XLSX)
+        function exportToExcel() {
             const selectedMonth = document.getElementById('filterBulan').value;
             const selectedPerumahan = document.getElementById('filterPerumahan').value;
 
@@ -381,25 +385,38 @@
                 return;
             }
 
-            let csvContent = "\uFEFFID,Nama Warga,Perumahan,No Rumah,No WhatsApp,Jumlah Iuran,Jatuh Tempo,Status\n";
-            filteredBills.forEach(b => {
-                csvContent += `"${b.id}","${b.namaPemilik.replace(/"/g, '""')}","${b.namaPerumahan.replace(/"/g, '""')}","${b.noRumah.replace(/"/g, '""')}","${b.noWhatsapp}",${b.jumlahIuran},"${b.jatuhTempo}","${b.status}"\n`;
-            });
+            const excelData = filteredBills.map(b => ({
+                'ID Transaksi': b.id,
+                'Nama Warga': b.namaPemilik,
+                'Perumahan': b.namaPerumahan,
+                'No. Rumah': b.noRumah,
+                'No. WhatsApp': b.noWhatsapp,
+                'Jumlah Iuran (Rp)': b.jumlahIuran,
+                'Jatuh Tempo': b.jatuhTempo,
+                'Status Pembayaran': b.status
+            }));
 
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            const fileName = `Backup_${selectedPerumahan === 'Semua' ? 'Semua' : selectedPerumahan}_${selectedMonth}.csv`;
-            link.setAttribute("href", url);
-            link.setAttribute("download", fileName);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            worksheet['!cols'] = [
+                { wch: 15 }, { wch: 22 }, { wch: 20 },
+                { wch: 12 }, { wch: 16 }, { wch: 18 },
+                { wch: 14 }, { wch: 18 }
+            ];
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Data Tagihan");
+
+            const perumahanNameStr = selectedPerumahan === 'Semua' ? 'Semua_Perumahan' : selectedPerumahan.replace(/\s+/g, '_');
+            const fileName = `Backup_Tagihan_${perumahanNameStr}_${selectedMonth}.xlsx`;
+
+            XLSX.writeFile(workbook, fileName);
         }
 
+        // FUNGSI CETAK STRUK (KOMPATIBEL MEDIAN & BROWSER)
         function printReceipt(id) {
             const bill = bills.find(b => b.id === id);
             if (!bill) return;
+
             document.getElementById('rPerumahan').textContent = bill.namaPerumahan;
             document.getElementById('rNoTrans').textContent = 'TRX-' + bill.id;
             document.getElementById('rTglLunas').textContent = formatDate(new Date().toISOString().split('T')[0]);
@@ -407,7 +424,31 @@
             document.getElementById('rNoRumah').textContent = bill.noRumah;
             document.getElementById('rTempo').textContent = formatDate(bill.jatuhTempo);
             document.getElementById('rNominal').textContent = formatRupiah(bill.jumlahIuran);
-            window.print();
+
+            if (navigator.userAgent.includes('median') || window.median) {
+                window.location.href = "median://print/print";
+            } else {
+                window.print();
+            }
+        }
+
+        // FUNGSI INGATKAN WA (DEEP LINK LANGSUNG KE WHATSAPP)
+        function shareReminder(id) {
+            const bill = bills.find(b => b.id === id);
+            if (!bill) return;
+
+            let phone = bill.noWhatsapp.replace(/[^0-9]/g, '');
+            if (phone.startsWith('0')) {
+                phone = '62' + phone.substring(1);
+            }
+
+            const msg = `Halo Bapak/Ibu *${bill.namaPemilik}* (${bill.noRumah}),\n\n` +
+                        `Mengingatkan untuk pembayaran *Iuran Sampah ${bill.namaPerumahan}* sebesar *${formatRupiah(bill.jumlahIuran)}*.\n` +
+                        `Tanggal Jatuh Tempo: *${formatDate(bill.jatuhTempo)}*.\n\n` +
+                        `Mohon segera melakukan pembayaran. Terima kasih!`;
+
+            const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+            window.location.href = waUrl;
         }
 
         function tambahNamaPerumahan() {
@@ -574,21 +615,6 @@
                 bills = bills.filter(b => b.id !== id);
                 saveData();
                 renderTable();
-            }
-        }
-
-        async function shareReminder(id) {
-            const bill = bills.find(b => b.id === id);
-            const msg = `Halo Bapak/Ibu *${bill.namaPemilik}* (${bill.noRumah}),\n\n` +
-                        `Mengingatkan untuk pembayaran *Iuran Sampah ${bill.namaPerumahan}* sebesar *${formatRupiah(bill.jumlahIuran)}*.\n` +
-                        `Tanggal Jatuh Tempo: *${formatDate(bill.jatuhTempo)}*.\n\n` +
-                        `Mohon segera melakukan pembayaran. Terima kasih!`;
-
-            if (navigator.share) {
-                try { await navigator.share({ title: 'Tagihan Iuran Sampah', text: msg }); } catch (err) {}
-            } else {
-                navigator.clipboard.writeText(msg);
-                alert("Pesan pengingat telah disalin ke clipboard!");
             }
         }
 
