@@ -16,24 +16,31 @@
     * { box-sizing: border-box; }
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
     .container { max-width: 1050px; margin: 0 auto; }
-    .header { background: #2e7d32; color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+    
+    /* Header Bar */
+    .header { background: #2e7d32; color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 15px; text-align: center; }
     .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; background: #e0e0e0; color: #333; }
     .status-online { background: #d4edda; color: #155724; }
     .status-offline { background: #f8d7da; color: #721c24; }
     
+    /* Container Tombol Aksi di Bawah Header */
+    .header-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin-bottom: 20px; }
+
+    /* Card & Table Area */
     .card { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-    .card h3 { margin-top: 0; color: #2e7d32; font-size: 16px; border-bottom: 2px solid #e8f5e9; padding-bottom: 8px; }
+    .card h3 { margin-top: 0; color: #2e7d32; font-size: 18px; border-bottom: 2px solid #e8f5e9; padding-bottom: 10px; margin-bottom: 15px; }
     
     .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 15px; text-align: left; }
     .form-group { display: flex; flex-direction: column; }
     .form-group label { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #555; }
     input, select { padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
     
-    .filter-bar { display: flex; align-items: center; justify-content: space-between; background: #e8f5e9; padding: 12px 15px; border-radius: 6px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
-    .filter-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    /* Filter Bar khusus Periode Bulan & Tahun */
+    .filter-bar { display: flex; align-items: center; background: #e8f5e9; padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; gap: 10px; flex-wrap: wrap; }
     .filter-bar label { font-weight: bold; font-size: 13px; color: #2e7d32; }
 
-    .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; color: #fff; font-weight: bold; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+    /* Button Styles */
+    .btn { padding: 8px 14px; border: none; border-radius: 5px; cursor: pointer; color: #fff; font-weight: bold; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
     .btn-green { background: #28a745; }
     .btn-green:hover { background: #218838; }
     .btn-blue { background: #007bff; }
@@ -42,7 +49,7 @@
     .btn-gray { background: #6c757d; }
     .btn-purple { background: #6f42c1; }
     .btn-purple:hover { background: #5a32a3; }
-    .btn-outline { background: transparent; border: 1px solid #2e7d32; color: #2e7d32; }
+    .btn-outline { background: #fff; border: 1.5px solid #2e7d32; color: #2e7d32; }
     .btn-outline:hover { background: #e8f5e9; }
     
     .btn-action { padding: 4px 7px; font-size: 11px; font-weight: 600; white-space: nowrap; border-radius: 3px; }
@@ -55,16 +62,16 @@
     .badge-lunas { background: #d4edda; color: #155724; }
     .badge-pending { background: #fff3cd; color: #856404; }
 
-    /* Modal Global Styling */
+    /* Modal Styling */
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; padding: 15px; }
     .modal-content { background: #fff; padding: 20px; border-radius: 8px; width: 100%; max-width: 500px; text-align: center; max-height: 90vh; overflow-y: auto; }
 
-    /* Desain Chip Perumahan Yang Baru & Elegan */
+    /* Tag Perumahan */
     .perum-list { margin-top: 15px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-start; }
-    .perum-item { background: #e8f5e9; border: 1px solid #c8e6c9; padding: 3px 8px; border-radius: 12px; font-size: 12px; color: #2e7d32; display: flex; align-items: center; gap: 6px; font-weight: 500; }
+    .perum-item { background: #e8f5e9; border: 1px solid #c8e6c9; padding: 4px 10px; border-radius: 12px; font-size: 12px; color: #2e7d32; display: flex; align-items: center; gap: 6px; font-weight: 500; }
     .perum-item button { border: none; background: transparent; cursor: pointer; padding: 0 2px; font-size: 12px; }
 
-    /* Layout Struk Rapi Presisi */
+    /* Struk Thermal Layout */
     #receipt-area {
       width: 58mm;
       padding: 6mm 4mm;
@@ -79,7 +86,6 @@
     }
     #receipt-area h4 { text-align: center; margin: 0 0 5px 0; font-size: 12px; text-transform: uppercase; }
     .dashed-line { border-bottom: 1px dashed #000; margin: 6px 0; }
-
     .receipt-row { display: flex; justify-content: space-between; margin: 2px 0; }
     .receipt-label { width: 90px; display: flex; justify-content: space-between; padding-right: 5px; }
     .receipt-val { flex: 1; word-break: break-word; }
@@ -96,49 +102,48 @@
 <body>
 
   <div class="container">
+    <!-- 1. HEADER -->
     <div class="header">
       <h2 style="margin: 0 0 5px 0;">Sistem Tagihan Sampah Online</h2>
       <div id="status_server" class="status-badge status-offline">Memeriksa Koneksi...</div>
     </div>
 
-    <!-- Tabel Data Tagihan Utama -->
+    <!-- 2. TOMBOL AKSI DI BAWAH HEADER -->
+    <div class="header-actions">
+      <button class="btn btn-outline" onclick="openModalPerumahan()">⚙️ Kelola Perumahan</button>
+      <button class="btn btn-purple" onclick="openModalExport()">📊 Rekap & Export</button>
+      <button class="btn btn-green" onclick="openModalFormWarga()">➕ Tambah Tagihan Warga</button>
+    </div>
+
+    <!-- 3. DAFTAR TAGIHAN SAMPAH -->
     <div class="card">
       <h3>Daftar Tagihan Sampah Warga</h3>
       
+      <!-- 4. FILTER BULAN DAN TAHUN -->
       <div class="filter-bar">
-        <div class="filter-group">
-          <label>🔍 Periode:</label>
-          <select id="filter_bulan" onchange="loadTagihan()">
-            <option value="1">Januari</option>
-            <option value="2">Februari</option>
-            <option value="3">Maret</option>
-            <option value="4">April</option>
-            <option value="5">Mei</option>
-            <option value="6">Juni</option>
-            <option value="7">Juli</option>
-            <option value="8">Agustus</option>
-            <option value="9">September</option>
-            <option value="10">Oktober</option>
-            <option value="11">November</option>
-            <option value="12">Desember</option>
-          </select>
-          <select id="filter_tahun" onchange="loadTagihan()">
-            <option value="2025">2025</option>
-            <option value="2026">2026</option>
-            <option value="2027">2027</option>
-          </select>
-        </div>
-
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <!-- Tombol Kelola Perumahan (Modal) -->
-          <button class="btn btn-outline" onclick="openModalPerumahan()">⚙️ Kelola Perumahan</button>
-          <!-- Tombol Export Data -->
-          <button class="btn btn-purple" onclick="openModalExport()">📊 Rekap & Export</button>
-          <!-- Tombol Buka Modal Form Warga -->
-          <button class="btn btn-green" onclick="openModalFormWarga()">➕ Tambah Tagihan Warga</button>
-        </div>
+        <label>🔍 Periode:</label>
+        <select id="filter_bulan" onchange="loadTagihan()">
+          <option value="1">Januari</option>
+          <option value="2">Februari</option>
+          <option value="3">Maret</option>
+          <option value="4">April</option>
+          <option value="5">Mei</option>
+          <option value="6">Juni</option>
+          <option value="7">Juli</option>
+          <option value="8">Agustus</option>
+          <option value="9">September</option>
+          <option value="10">Oktober</option>
+          <option value="11">November</option>
+          <option value="12">Desember</option>
+        </select>
+        <select id="filter_tahun" onchange="loadTagihan()">
+          <option value="2025">2025</option>
+          <option value="2026">2026</option>
+          <option value="2027">2027</option>
+        </select>
       </div>
 
+      <!-- 5. ISI DATA (TABEL) -->
       <div style="overflow-x: auto;">
         <table>
           <thead>
@@ -162,7 +167,7 @@
     </div>
   </div>
 
-  <!-- MODAL FLOATING: Kelola Master Perumahan (Kini Ringkas dalam Modal) -->
+  <!-- MODAL: Kelola Master Perumahan -->
   <div id="modalPerumahan" class="modal">
     <div class="modal-content">
       <h3 style="margin-top:0; color:#2e7d32; text-align: left; border-bottom: 2px solid #e8f5e9; padding-bottom: 8px;">Master Perumahan</h3>
@@ -182,7 +187,7 @@
     </div>
   </div>
 
-  <!-- MODAL FLOATING: Form Input/Edit Tagihan Warga -->
+  <!-- MODAL: Form Input/Edit Tagihan Warga -->
   <div id="modalFormWarga" class="modal">
     <div class="modal-content">
       <h3 id="modal_form_title" style="margin-top:0; color:#2e7d32; text-align: left; border-bottom: 2px solid #e8f5e9; padding-bottom: 8px;">Tambah Tagihan Warga Baru</h3>
@@ -222,7 +227,7 @@
     </div>
   </div>
 
-  <!-- MODAL EXPORT & REKAP DATA -->
+  <!-- MODAL: Rekap & Export Data -->
   <div id="modalExport" class="modal">
     <div class="modal-content">
       <h3 style="margin-top:0; color:#6f42c1; text-align: left; border-bottom: 2px solid #e8f5e9; padding-bottom: 8px;">Rekap & Export Laporan</h3>
@@ -252,7 +257,7 @@
     </div>
   </div>
 
-  <!-- Modal Konfirmasi Bayar -->
+  <!-- MODAL: Konfirmasi Bayar -->
   <div id="modalBayar" class="modal">
     <div class="modal-content" style="max-width: 340px;">
       <h3 style="margin-top:0; color:#2e7d32;">Konfirmasi Pembayaran</h3>
@@ -266,7 +271,7 @@
     </div>
   </div>
 
-  <!-- Modal Struk Thermal -->
+  <!-- MODAL: Struk Thermal -->
   <div id="modalStruk" class="modal">
     <div class="modal-content" style="max-width: 340px;">
       <div id="receipt-area">
@@ -515,7 +520,7 @@
       });
     }
 
-    /* FITUR EXPORT EXCEL DAN PDF */
+    /* EXPORT EXCEL & PDF */
     async function prosesExport(format) {
       const bulanVal = document.getElementById('filter_bulan').value;
       const bulanText = document.getElementById('filter_bulan').options[document.getElementById('filter_bulan').selectedIndex].text;
