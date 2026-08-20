@@ -143,7 +143,6 @@
     <div class="modal-content">
       <div id="receipt-area">
         <h4>E-RETRIBUSI SAMPAH</h4>
-        <p style="text-align: center;" id="r_perumahan_head"></p>
         <div class="dashed-line"></div>
         <p id="r_warga"></p>
         <p id="r_norumah"></p>
@@ -260,9 +259,9 @@
       data.forEach(row => {
         const isLunas = row.status_bayar === true || row.status_bayar === 'true';
         
-        // Format Tgl
+        // Format Tanggal
         const tglJatuhTempo = row.jatuh_tempo ? new Date(row.jatuh_tempo).toLocaleDateString('id-ID') : '-';
-        const tglBayar = row.tanggal_bayar ? new Date(row.tanggal_bayar).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }) : '-';
+        const tglBayar = row.tanggal_bayar ? new Date(row.tanggal_bayar).toLocaleDateString('id-ID') : '-';
 
         tbody.innerHTML += `
           <tr>
@@ -289,15 +288,25 @@
       let updateData = {};
 
       if (statusSekarang) {
-        // Batal Bayar (minta Password)
+        // Proses Batal Bayar (minta Password)
         const pass = prompt("Masukkan Password untuk Batal Bayar:");
         if (pass === null) return;
         if (pass !== "12345") return alert("Password salah! Aksi dibatalkan.");
         
         updateData = { status_bayar: false, tanggal_bayar: null };
       } else {
-        // Klik Bayar (catat tanggal bayar sekarang)
-        updateData = { status_bayar: true, tanggal_bayar: new Date().toISOString() };
+        // Konfirmasi sebelum melakukan pembayaran
+        const konfirmasi = confirm("Apakah Anda yakin ingin melakukan pembayaran ini?");
+        if (!konfirmasi) return;
+
+        // Input Pilihan Tanggal Bayar (Default tanggal hari ini)
+        const today = new Date().toISOString().split('T')[0];
+        const tglInput = prompt("Masukkan Tanggal Bayar (Format: YYYY-MM-DD):", today);
+        
+        if (tglInput === null) return; // Klik Batal di prompt
+        if (!tglInput.trim()) return alert("Tanggal bayar wajib diisi!");
+
+        updateData = { status_bayar: true, tanggal_bayar: tglInput.trim() };
       }
 
       const { error } = await _supabase.from('tagihan').update(updateData).eq('id', id);
@@ -328,14 +337,13 @@
     }
 
     function cetakStruk(warga, perum, rumah, iuran, jatuhTempo, isLunas, tglBayar) {
-      document.getElementById('r_perumahan_head').innerText = perum;
       document.getElementById('r_warga').innerText = "Warga : " + warga;
       document.getElementById('r_norumah').innerText = "No.   : " + rumah;
       document.getElementById('r_perumahan').innerText = "Perum : " + perum;
       document.getElementById('r_jatuhtempo').innerText = "Jatuh Tempo: " + jatuhTempo;
       document.getElementById('r_iuran').innerText = "Total : Rp " + Number(iuran).toLocaleString('id-ID');
       document.getElementById('r_status').innerText = "Status: " + (isLunas ? 'LUNAS' : 'BELUM BAYAR');
-      document.getElementById('r_tglbayar').innerText = isLunas ? "Tgl Bayar : " + tglBayar : "";
+      document.getElementById('r_tglbayar').innerText = isLunas ? "Tgl Bayar  : " + tglBayar : "";
       
       document.getElementById('modalStruk').style.display = 'flex';
     }
