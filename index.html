@@ -1,480 +1,188 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Tagihan Sampah Multi-Perumahan</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Tagihan Sampah Online</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: sans-serif; background: #f4f6f9; margin: 20px; }
+    .card { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; color: #fff; font-weight: bold; }
+    .btn-green { background: #28a745; }
+    .btn-blue { background: #007bff; }
+    .btn-orange { background: #fd7e14; }
+    .btn-red { background: #dc3545; }
+    .btn-gray { background: #6c757d; }
+    .form-group { margin-bottom: 15px; display: inline-block; vertical-align: top; margin-right: 10px; }
+    input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background: #f8f9fa; }
 
-    <!-- Supabase JS SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- SheetJS & jsPDF -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    /* Modal Struk Styling */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+    .modal-content { background: #fff; padding: 20px; border-radius: 8px; text-align: center; }
 
-    <style>
-        :root {
-            --primary: #2e7d32;
-            --primary-dark: #1b5e20;
-            --bg: #f4f6f8;
-            --card-bg: #ffffff;
-            --border: #e0e0e0;
-            --text: #333333;
-            --danger: #d32f2f;
-            --success: #388e3c;
-            --warning: #f57c00;
-        }
+    /* Layout Struk 58mm Thermal */
+    #receipt-area {
+      width: 58mm;
+      padding: 5mm;
+      background: #fff;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 11px;
+      line-height: 1.2;
+      border: 1px dashed #ccc;
+      margin: 0 auto 15px auto;
+      text-align: left;
+    }
+    #receipt-area h4 { text-align: center; margin: 0 0 5px 0; }
+    .dashed-line { border-bottom: 1px dashed #000; margin: 5px 0; }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg);
-            color: var(--text);
-            padding: 15px;
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: auto;
-        }
-
-        header {
-            background: var(--primary);
-            color: white;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        header h1 {
-            font-size: 1.5rem;
-            margin-bottom: 5px;
-        }
-
-        header p {
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-
-        .card {
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
-            margin-bottom: 20px;
-        }
-
-        .card-title {
-            font-size: 1.1rem;
-            margin-bottom: 15px;
-            color: var(--primary);
-            border-bottom: 2px solid #f0f0f0;
-            padding-bottom: 8px;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 0.85rem;
-        }
-
-        .status-connecting { background: #fff3e0; color: var(--warning); }
-        .status-online { background: #e8f5e9; color: var(--success); }
-        .status-offline { background: #ffebee; color: var(--danger); }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .form-group label {
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: #555;
-        }
-
-        .form-group input, .form-group select {
-            padding: 10px;
-            border: 1px solid var(--border);
-            border-radius: 5px;
-            font-size: 0.9rem;
-            outline: none;
-        }
-
-        .form-group input:focus, .form-group select:focus {
-            border-color: var(--primary);
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 15px;
-        }
-
-        .btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.9rem;
-            transition: background 0.2s;
-        }
-
-        .btn:hover {
-            background: var(--primary-dark);
-        }
-
-        .btn-secondary {
-            background: #616161;
-        }
-        .btn-secondary:hover { background: #424242; }
-
-        .btn-excel {
-            background: #1d6f42;
-        }
-        .btn-excel:hover { background: #155231; }
-
-        .btn-pdf {
-            background: #b71c1c;
-        }
-        .btn-pdf:hover { background: #880e4f; }
-
-        .table-responsive {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            font-size: 0.88rem;
-        }
-
-        th, td {
-            border: 1px solid var(--border);
-            padding: 10px;
-            text-align: left;
-        }
-
-        th {
-            background: #f8f9fa;
-            color: #444;
-            font-weight: 600;
-        }
-
-        tr:nth-child(even) {
-            background-color: #fafafa;
-        }
-
-        .badge-lunas {
-            background: #e8f5e9;
-            color: #2e7d32;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-
-        .badge-belum {
-            background: #ffebee;
-            color: #c62828;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-
-        .btn-sm {
-            padding: 5px 8px;
-            font-size: 0.75rem;
-            border-radius: 3px;
-        }
-
-        .btn-wa {
-            background: #25d366;
-            color: white;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        @media (max-width: 600px) {
-            body { padding: 10px; }
-            .card { padding: 15px; }
-            .form-grid { grid-template-columns: 1fr; }
-        }
-    </style>
+    /* CSS Khusus Print Thermal */
+    @media print {
+      body * { visibility: hidden; }
+      #receipt-area, #receipt-area * { visibility: visible; }
+      #receipt-area { position: absolute; left: 0; top: 0; width: 58mm; border: none; }
+    }
+  </style>
 </head>
 <body>
 
-    <div class="container">
-        <header>
-            <h1>Sistem Tagihan Sampah Online</h1>
-            <p>Terhubung dengan Cloud Database Supabase & Vercel</p>
-        </header>
-
-        <!-- STATUS SERVER CARD -->
-        <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                <div>
-                    Status Server: 
-                    <span id="dbStatus" class="status-badge status-connecting">Menghubungkan...</span>
-                </div>
-                <div>
-                    <button class="btn btn-secondary btn-sm" onclick="checkConnection()">🔄 Cek Koneksi</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- FORM INPUT TAGIHAN BARU -->
-        <div class="card">
-            <h2 class="card-title">Tambah Tagihan Warga Baru</h2>
-            <form id="billForm" onsubmit="saveBill(event)">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="nama_perumahan">Nama Perumahan / Perum</label>
-                        <input type="text" id="nama_perumahan" placeholder="Contoh: Griya Asri Block A" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="nama_pemilik">Nama Warga / Pemilik</label>
-                        <input type="text" id="nama_pemilik" placeholder="Contoh: Budi Santoso" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="no_rumah">No. Rumah / Blok</label>
-                        <input type="text" id="no_rumah" placeholder="Contoh: A-12" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="no_whatsapp">No. WhatsApp</label>
-                        <input type="tel" id="no_whatsapp" placeholder="Contoh: 628123456789" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="jumlah_iuran">Jumlah Iuran (Rp)</label>
-                        <input type="number" id="jumlah_iuran" placeholder="Contoh: 35000" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="jatuh_tempo">Jatuh Tempo</label>
-                        <input type="date" id="jatuh_tempo" required>
-                    </div>
-                </div>
-                <button type="submit" class="btn" id="btnSubmit">💾 Simpan ke Database</button>
-            </form>
-        </div>
-
-        <!-- DATA TABEL TAGIHAN -->
-        <div class="card">
-            <h2 class="card-title">Daftar Tagihan Sampah Warga</h2>
-            
-            <div class="btn-group">
-                <button class="btn btn-secondary" onclick="loadData()">🔄 Refresh Data</button>
-                <button class="btn btn-excel" onclick="exportToExcel()">📊 Export Excel</button>
-                <button class="btn btn-pdf" onclick="exportToPDF()">📄 Export PDF</button>
-            </div>
-
-            <div class="table-responsive">
-                <table id="dataTable">
-                    <thead>
-                        <tr>
-                            <th>Warga</th>
-                            <th>Perumahan</th>
-                            <th>No. Rumah</th>
-                            <th>Iuran</th>
-                            <th>Jatuh Tempo</th>
-                            <th>Status</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody">
-                        <tr>
-                            <td colspan="7" style="text-align: center;">Memuat data...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+  <div class="card">
+    <h3>Tambah / Kelola Master Perumahan</h3>
+    <div class="form-group">
+      <input type="text" id="new_perumahan" placeholder="Nama Perumahan Baru">
+      <button class="btn btn-blue" onclick="addPerumahan()">+ Tambah Perumahan</button>
     </div>
+  </div>
 
-    <script>
-        // =========================================================
-        // KREDENSIAL SUPABASE ANDA
-        // =========================================================
-        const SUPABASE_URL = "https://perrqmlciaemfushewmh.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlcnJxbWxjaWFlbWZ1c2hld21oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxOTA4MTksImV4cCI6MjEwMjc2NjgxOX0.VNgPSSbJVX1ib95NJC7ufZxSkBi2ocB17syX4A0BD5A";
+  <div class="card">
+    <h3>Tambah Tagihan Warga Baru</h3>
+    <div class="form-group">
+      <label>Perumahan:</label><br>
+      <select id="select_perumahan"></select>
+    </div>
+    <div class="form-group">
+      <label>Nama Warga:</label><br>
+      <input type="text" id="nama_warga">
+    </div>
+    <div class="form-group">
+      <label>No. Rumah:</label><br>
+      <input type="text" id="no_rumah">
+    </div>
+    <div class="form-group">
+      <label>Jumlah Iuran (Rp):</label><br>
+      <input type="number" id="jumlah_iuran" value="35000">
+    </div>
+    <button class="btn btn-green" onclick="simpanTagihan()">💾 Simpan Tagihan</button>
+  </div>
 
-        // Inisialisasi client Supabase
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  <div class="card">
+    <h3>Daftar Tagihan Sampah Warga</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Warga</th>
+          <th>Perumahan</th>
+          <th>No. Rumah</th>
+          <th>Iuran</th>
+          <th>Status</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="table_data">
+        <!-- Data Rendered Here -->
+      </tbody>
+    </table>
+  </div>
 
-        // Function Cek Koneksi
-        async function checkConnection() {
-            const statusBadge = document.getElementById('dbStatus');
-            statusBadge.className = "status-badge status-connecting";
-            statusBadge.textContent = "Menghubungkan...";
+  <!-- Modal Display Struk -->
+  <div id="modalStruk" class="modal">
+    <div class="modal-content">
+      <div id="receipt-area">
+        <h4>E-RETRIBUSI SAMPAH</h4>
+        <div class="dashed-line"></div>
+        <p id="r_tanggal"></p>
+        <p id="r_perumahan"></p>
+        <p id="r_warga"></p>
+        <p id="r_norumah"></p>
+        <div class="dashed-line"></div>
+        <p id="r_iuran"></p>
+        <p id="r_status"></p>
+        <div class="dashed-line"></div>
+        <p style="text-align: center;">Terima Kasih Atas Pembayaran Anda!</p>
+      </div>
+      <button class="btn btn-green" onclick="window.print()">🖨️ Print Thermal</button>
+      <button class="btn btn-red" onclick="closeStruk()">Tutup</button>
+    </div>
+  </div>
 
-            try {
-                const { data, error } = await supabaseClient.from('bills').select('id').limit(1);
-                if (error) throw error;
+  <script>
+    const SUPABASE_URL = "URL_SUPABASE_ANDA";
+    const SUPABASE_KEY = "KEY_ANON_SUPABASE_ANDA";
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-                statusBadge.className = "status-badge status-online";
-                statusBadge.textContent = "Terhubung (Online)";
-                loadData();
-            } catch (err) {
-                console.error("Connection Error:", err);
-                statusBadge.className = "status-badge status-offline";
-                statusBadge.textContent = "Gagal Terhubung (" + (err.message || "Error") + ")";
-            }
-        }
+    // 1. Tambah Master Perumahan
+    async function addPerumahan() {
+      const nama = document.getElementById('new_perumahan').value;
+      if(!nama) return alert('Isi nama perumahan');
+      await _supabase.from('master_perumahan').insert([{ nama_perumahan: nama }]);
+      document.getElementById('new_perumahan').value = '';
+      loadPerumahan();
+    }
 
-        // Function Load Data dari Supabase
-        async function loadData() {
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Memuat data...</td></tr>';
+    async function loadPerumahan() {
+      const { data } = await _supabase.from('master_perumahan').select('*');
+      const select = document.getElementById('select_perumahan');
+      select.innerHTML = '';
+      data?.forEach(p => {
+        select.innerHTML += `<option value="${p.nama_perumahan}">${p.nama_perumahan}</option>`;
+      });
+    }
 
-            try {
-                const { data, error } = await supabaseClient
-                    .from('bills')
-                    .select('*')
-                    .order('created_at', { ascending: false });
+    // 2. Tampilkan Tagihan & Tombol Aksi
+    async function loadTagihan() {
+      const { data } = await _supabase.from('tagihan').select('*');
+      const tbody = document.getElementById('table_data');
+      tbody.innerHTML = '';
+      
+      data?.forEach(row => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${row.nama_warga}</td>
+            <td>${row.nama_perumahan}</td>
+            <td>${row.no_rumah}</td>
+            <td>Rp ${Number(row.iuran).toLocaleString('id-ID')}</td>
+            <td>${row.status_bayar ? 'Lunas' : 'Belum Bayar'}</td>
+            <td>
+              <button class="btn btn-blue" onclick="cetakStruk('${row.nama_warga}', '${row.nama_perumahan}', '${row.no_rumah}', ${row.iuran}, '${row.status_bayar}')">🧾 Struk</button>
+              <button class="btn btn-orange" onclick="editData('${row.id}')">✏️ Edit</button>
+              <button class="btn btn-green" onclick="bayarData('${row.id}')">💳 Bayar</button>
+            </td>
+          </tr>`;
+      });
+    }
 
-                if (error) throw error;
+    // 3. Logika Cetak Struk
+    function cetakStruk(warga, perum, rumah, iuran, status) {
+      document.getElementById('r_tanggal').innerText = "Tgl: " + new Date().toLocaleDateString('id-ID');
+      document.getElementById('r_perumahan').innerText = "Perum : " + perum;
+      document.getElementById('r_warga').innerText = "Warga : " + warga;
+      document.getElementById('r_norumah').innerText = "No.   : " + rumah;
+      document.getElementById('r_iuran').innerText = "Iuran : Rp " + Number(iuran).toLocaleString('id-ID');
+      document.getElementById('r_status').innerText = "Status: " + (status === 'true' || status === true ? 'LUNAS' : 'PENDING');
+      
+      document.getElementById('modalStruk').style.display = 'flex';
+    }
 
-                tbody.innerHTML = '';
+    function closeStruk() {
+      document.getElementById('modalStruk').style.display = 'none';
+    }
 
-                if (!data || data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Belum ada data tagihan di database.</td></tr>';
-                    return;
-                }
-
-                data.forEach(item => {
-                    const tr = document.createElement('tr');
-                    
-                    const formattedIuran = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(item.jumlah_iuran || 0);
-                    
-                    const isLunas = item.status === 'Lunas';
-                    const statusBadge = isLunas 
-                        ? '<span class="badge-lunas">Lunas</span>' 
-                        : '<span class="badge-belum">Belum Bayar</span>';
-
-                    // Format pesan WhatsApp
-                    const waText = encodeURIComponent(`Halo Bpk/Ibu ${item.nama_pemilik}, mengingatkan tagihan iuran sampah perumahan ${item.nama_perumahan} (Rumah ${item.no_rumah}) sebesar ${formattedIuran} jatuh tempo pada ${item.jatuh_tempo}. Terima kasih.`);
-                    const waLink = `https://wa.me/${item.no_whatsapp}?text=${waText}`;
-
-                    tr.innerHTML = `
-                        <td><strong>${escapeHtml(item.nama_pemilik)}</strong></td>
-                        <td>${escapeHtml(item.nama_perumahan)}</td>
-                        <td>${escapeHtml(item.no_rumah)}</td>
-                        <td>${formattedIuran}</td>
-                        <td>${item.jatuh_tempo || '-'}</td>
-                        <td>${statusBadge}</td>
-                        <td>
-                            <a href="${waLink}" target="_blank" class="btn btn-sm btn-wa">💬 WA</a>
-                            <button class="btn btn-sm btn-secondary" onclick="toggleStatus(${item.id}, '${item.status}')">
-                                ${isLunas ? 'Batal Lunas' : 'Tandai Lunas'}
-                            </button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-
-            } catch (err) {
-                console.error("Load Data Error:", err);
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: red;">Gagal memuat data: ${err.message}</td></tr>`;
-            }
-        }
-
-        // Function Simpan Tagihan Baru
-        async function saveBill(event) {
-            event.preventDefault();
-            const btnSubmit = document.getElementById('btnSubmit');
-            btnSubmit.disabled = true;
-            btnSubmit.textContent = "⏳ Menyimpan...";
-
-            const payload = {
-                nama_perumahan: document.getElementById('nama_perumahan').value,
-                nama_pemilik: document.getElementById('nama_pemilik').value,
-                no_rumah: document.getElementById('no_rumah').value,
-                no_whatsapp: document.getElementById('no_whatsapp').value,
-                jumlah_iuran: parseFloat(document.getElementById('jumlah_iuran').value),
-                jatuh_tempo: document.getElementById('jatuh_tempo').value,
-                status: 'Belum Bayar'
-            };
-
-            try {
-                const { data, error } = await supabaseClient.from('bills').insert([payload]);
-                if (error) throw error;
-
-                alert("✅ Data tagihan berhasil disimpan ke database!");
-                document.getElementById('billForm').reset();
-                loadData();
-            } catch (err) {
-                alert("❌ Gagal menyimpan data: " + err.message);
-            } finally {
-                btnSubmit.disabled = false;
-                btnSubmit.textContent = "💾 Simpan ke Database";
-            }
-        }
-
-        // Function Ubah Status Bayar
-        async function toggleStatus(id, currentStatus) {
-            const newStatus = currentStatus === 'Lunas' ? 'Belum Bayar' : 'Lunas';
-            try {
-                const { error } = await supabaseClient
-                    .from('bills')
-                    .update({ status: newStatus })
-                    .eq('id', id);
-
-                if (error) throw error;
-                loadData();
-            } catch (err) {
-                alert("Gagal memperbarui status: " + err.message);
-            }
-        }
-
-        // Function Export to Excel
-        function exportToExcel() {
-            const table = document.getElementById("dataTable");
-            const wb = XLSX.utils.table_to_book(table, { sheet: "Tagihan Sampah" });
-            XLSX.writeFile(wb, "Data_Tagihan_Sampah.xlsx");
-        }
-
-        // Function Export to PDF
-        function exportToPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            doc.text("Laporan Tagihan Sampah Perumahan", 14, 15);
-            doc.autoTable({ html: '#dataTable', startY: 20, columns: [0,1,2,3,4,5] });
-            doc.save("Data_Tagihan_Sampah.pdf");
-        }
-
-        // Helper prevent XSS
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-        }
-
-        // Set Default Date
-        document.addEventListener('DOMContentLoaded', () => {
-            const today = new Date();
-            today.setDate(today.getDate() + 30);
-            document.getElementById('jatuh_tempo').value = today.toISOString().split('T')[0];
-            checkConnection();
-        });
-    </script>
+    // Inisialisasi awal
+    loadPerumahan();
+    loadTagihan();
+  </script>
 </body>
 </html>
