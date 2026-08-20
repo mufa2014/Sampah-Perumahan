@@ -80,7 +80,7 @@
     <div class="card">
       <h3>Tambah Master Perumahan</h3>
       <div style="display: flex; gap: 10px;">
-        <input type="text" id="new_perumahan" placeholder="Contoh: Griya Asri Block A" style="flex: 1;">
+        <input type="text" id="new_perumahan" placeholder="Contoh: Paradise Residence 4" style="flex: 1;">
         <button class="btn btn-blue" onclick="addPerumahan()">+ Tambah Perumahan</button>
       </div>
     </div>
@@ -159,9 +159,12 @@
   </div>
 
   <script>
-    // MASUKKAN CREDENTIAL SUPABASE ANDA DI SINI
-    const SUPABASE_URL = "https://URL_SUPABASE_ANDA.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.PASTE_KEY_ANON_LENGKAP_ANDA";
+    // URL ANDA SUDAH TERSIMPAN DI SINI:
+    const SUPABASE_URL = "https://perrqmlciaemfushewmh.supabase.co";
+    
+    // TEMPELKAN KUNCI (ANON KEY) ANDA DI BAWAH INI:
+    const SUPABASE_KEY = "PASTE_KEY_ANON_SUPABASE_ANDA_DI_SINI";
+    
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // Inisialisasi
